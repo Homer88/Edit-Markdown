@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/translations">
+        <file>translations/editor_ru.qm</file>
+        <file>translations/editor_en.qm</file>
+    </qresource>
+</RCC>

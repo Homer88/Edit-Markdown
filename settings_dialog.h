@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QFormLayout>
+#include <QSlider>
 
 class SettingsDialog : public QDialog {
     Q_OBJECT
@@ -18,6 +19,7 @@ public:
     int fontSize() const;
     QString language() const;
     QString defaultEncoding() const;
+    qreal interfaceScale() const;
 
 private slots:
     void accept() override;
@@ -29,6 +31,8 @@ private:
     QSpinBox *m_fontSizeSpin;
     QComboBox *m_languageCombo;
     QComboBox *m_encodingCombo;
+    QSlider *m_interfaceScaleSlider;
+    QLabel *m_scaleValueLabel;
 };
 
 #endif // SETTINGS_DIALOG_H

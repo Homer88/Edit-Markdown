@@ -1,48 +1,35 @@
 ```
-# Qt/MOC generated files
-moc_*.cpp
-moc_*.h
-qrc_*.cpp
-*.qm
-*.ts
-
-# Build artifacts
-build/
-dist/
+# Compiled and build artifacts
 *.o
 *.obj
-*.a
-*.so
-*.dll
 *.exe
+*.dll
+*.so
+*.a
+*.out
 
 # Dependencies
-node_modules/
 venv/
 .venv/
 __pycache__/
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
+*.egg-info/
 
 # Logs and temp files
 *.log
 *.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Build directories
+build/
+dist/
+target/
 
 # Environment
 .env
 .env.local
 *.env.*
-
-# Coverage
-.coverage
-coverage/
-htmlcov/
-
-# OS
-.DS_Store
-Thumbs.db
 ```

@@ -1,6 +1,7 @@
 #include "settings_dialog.h"
 #include "settings.h"
 #include <QDialogButtonBox>
+#include <QSettings>
 
 SettingsDialog::SettingsDialog(QWidget *parent)
     : QDialog(parent)
@@ -35,6 +36,26 @@ void SettingsDialog::setupUI() {
     m_encodingCombo->addItem("KOI8-R", "KOI8-R");
     formLayout->addRow(tr("Кодировка по умолчанию:"), m_encodingCombo);
 
+    // Масштаб интерфейса
+    auto *scaleLayout = new QHBoxLayout();
+    m_interfaceScaleSlider = new QSlider(Qt::Horizontal, this);
+    m_interfaceScaleSlider->setRange(50, 200);
+    m_interfaceScaleSlider->setValue(100);
+    m_interfaceScaleSlider->setTickPosition(QSlider::TicksBelow);
+    m_interfaceScaleSlider->setTickInterval(25);
+    
+    m_scaleValueLabel = new QLabel("100%", this);
+    m_scaleValueLabel->setMinimumWidth(40);
+    
+    scaleLayout->addWidget(m_interfaceScaleSlider);
+    scaleLayout->addWidget(m_scaleValueLabel);
+    
+    connect(m_interfaceScaleSlider, &QSlider::valueChanged, [this](int value) {
+        m_scaleValueLabel->setText(QString::number(value) + "%");
+    });
+    
+    formLayout->addRow(tr("Масштаб интерфейса:"), scaleLayout);
+
     layout->addLayout(formLayout);
 
     // Кнопки
@@ -62,6 +83,13 @@ void SettingsDialog::loadCurrentSettings() {
     if (encIndex >= 0) {
         m_encodingCombo->setCurrentIndex(encIndex);
     }
+    
+    // Загрузить масштаб интерфейса
+    QSettings appSettings("MarkdownEditor", "Markdown Editor");
+    qreal interfaceScale = appSettings.value("interfaceScale", 1.0).toReal();
+    int scalePercent = qRound(interfaceScale * 100);
+    m_interfaceScaleSlider->setValue(scalePercent);
+    m_scaleValueLabel->setText(QString::number(scalePercent) + "%");
 }
 
 int SettingsDialog::fontSize() const {
@@ -76,6 +104,10 @@ QString SettingsDialog::defaultEncoding() const {
     return m_encodingCombo->currentData().toString();
 }
 
+qreal SettingsDialog::interfaceScale() const {
+    return m_interfaceScaleSlider->value() / 100.0;
+}
+
 void SettingsDialog::accept() {
     // Сохраняем настройки в синглтон
     auto& settings = Settings::instance();
@@ -85,6 +117,10 @@ void SettingsDialog::accept() {
     
     // Сохраняем в файл
     settings.saveToFile(settings.configPath());
+    
+    // Сохраняем масштаб интерфейса
+    QSettings appSettings("MarkdownEditor", "Markdown Editor");
+    appSettings.setValue("interfaceScale", interfaceScale());
     
     QDialog::accept();
 }

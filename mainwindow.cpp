@@ -2153,25 +2153,25 @@ void MainWindow::showEditorContextMenu(const QPoint& pos)
     
     // --- Table Operations Submenu ---
     contextMenu.addSeparator();
-    QMenu *tableMenu = contextMenu.addMenu(tr("Таблица"));
+    QMenu *tableMenu = contextMenu.addMenu(tr("Table"));
     
-    QAction *insertRowAction = tableMenu->addAction(tr("Вставить строку"));
+    QAction *insertRowAction = tableMenu->addAction(tr("Insert Row"));
     connect(insertRowAction, &QAction::triggered, this, &MainWindow::insertTableRow);
     
-    QAction *insertColAction = tableMenu->addAction(tr("Вставить столбец"));
+    QAction *insertColAction = tableMenu->addAction(tr("Insert Column"));
     connect(insertColAction, &QAction::triggered, this, &MainWindow::insertTableColumn);
     
-    QAction *deleteRowAction = tableMenu->addAction(tr("Удалить строку"));
+    QAction *deleteRowAction = tableMenu->addAction(tr("Delete Row"));
     connect(deleteRowAction, &QAction::triggered, this, &MainWindow::deleteTableRow);
     
-    QAction *deleteColAction = tableMenu->addAction(tr("Удалить столбец"));
+    QAction *deleteColAction = tableMenu->addAction(tr("Delete Column"));
     connect(deleteColAction, &QAction::triggered, this, &MainWindow::deleteTableColumn);
     
     tableMenu->addSeparator();
-    QAction *insertTableAction = tableMenu->addAction(tr("Вставить таблицу"));
+    QAction *insertTableAction = tableMenu->addAction(tr("Insert Table"));
     connect(insertTableAction, &QAction::triggered, this, &MainWindow::insertTable);
     
-    QAction *deleteTableAction = tableMenu->addAction(tr("Удалить таблицу"));
+    QAction *deleteTableAction = tableMenu->addAction(tr("Delete Table"));
     connect(deleteTableAction, &QAction::triggered, this, &MainWindow::deleteTable);
     
     // Показываем меню в позиции курсора

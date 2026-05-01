@@ -3090,8 +3090,26 @@ void MainWindow::updatePreview()
     if (!m_isPreviewVisible) return;
     
     QString markdownText = m_markdownEditor->toPlainText();
-    // Замена одинарных переносов строк на двойные пробелы + перенос для корректного отображения в Markdown
-    markdownText.replace("\n", "  \n");
+    
+    // Обработка переносов строк для корректного отображения в Markdown
+    // Разбиваем текст на строки и обрабатываем их
+    QStringList lines = markdownText.split('\n');
+    QStringList processedLines;
+    
+    for (int i = 0; i < lines.size(); ++i) {
+        QString line = lines[i];
+        
+        // Если это не пустая строка и следующая строка тоже не пустая - добавляем два пробела в конец
+        // Это создаст жесткий перенос строки в Markdown
+        if (!line.trimmed().isEmpty() && i < lines.size() - 1 && !lines[i + 1].trimmed().isEmpty()) {
+            processedLines << (line + "  ");
+        } else {
+            processedLines << line;
+        }
+    }
+    
+    markdownText = processedLines.join('\n');
+    
     QString htmlContent = m_parser->parse(markdownText);
     
     // Формируем полный HTML с базовыми стилями

@@ -37,12 +37,23 @@ set(PROJECT_SOURCES
     resources.qrc
 )
 
+# Явная генерация MOC для классов с Q_OBJECT (надежность для MSVC)
+qt5_wrap_cpp(MOC_SOURCES
+    mainwindow.h
+    helpwindow.h
+    markdownparser.h
+    spellchecker.h
+    settings.h
+    settings_dialog.h
+    markdownhighlighter.h
+)
+
 # --- Сборка Hunspell из исходников ---
 # Добавляем подпроект Hunspell (исходники лежат в hunspell/hunspell)
 add_subdirectory(hunspell)
 
 # Создаем исполняемый файл и указываем выходную папку
-add_executable(markdown-editor ${PROJECT_SOURCES})
+add_executable(markdown-editor ${PROJECT_SOURCES} ${MOC_SOURCES})
 set_target_properties(markdown-editor PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/application"
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/application"

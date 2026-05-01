@@ -45,10 +45,13 @@ void LineNumberArea::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.fillRect(event->rect(), Qt::lightGray);
     
-    QTextBlock block = textEditor->firstVisibleBlock();
+    PlainTextEditWithLineNumbers* editor = qobject_cast<PlainTextEditWithLineNumbers*>(textEditor);
+    if (!editor) return;
+    
+    QTextBlock block = editor->firstVisibleBlockPublic();
     int blockNumber = block.blockNumber();
-    qreal top = qRound(textEditor->blockBoundingGeometry(block).translated(textEditor->contentOffset()).top());
-    qreal bottom = top + qRound(textEditor->blockBoundingRect(block).height());
+    qreal top = qRound(editor->blockBoundingGeometryPublic(block).translated(editor->contentOffsetPublic()).top());
+    qreal bottom = top + qRound(editor->blockBoundingRectPublic(block).height());
     
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
@@ -60,7 +63,7 @@ void LineNumberArea::paintEvent(QPaintEvent *event)
         
         block = block.next();
         top = bottom;
-        bottom = top + qRound(textEditor->blockBoundingRect(block).height());
+        bottom = top + qRound(editor->blockBoundingRectPublic(block).height());
         ++blockNumber;
     }
 }
@@ -116,6 +119,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_wysiwygAction(nullptr)
     , m_markdownAction(nullptr)
     , m_isWysiwygMode(false)
+    , m_currentFile("")
+    , m_currentEncoding("UTF-8")
     , m_isModified(false)
     , m_spellChecker(nullptr)
     , m_translator(new QTranslator(this))
@@ -1049,9 +1054,9 @@ void MainWindow::openFile()
 {
     QString fileName = QFileDialog::getOpenFileName(
         this,
-        "Открыть файл",
+        tr("Open File"),
         "",
-        "Markdown файлы (*.md *.markdown *.txt);;Все файлы (*)"
+        tr("Markdown files (*.md *.markdown *.txt);;All files (*)")
     );
     
     if (fileName.isEmpty()) {
@@ -1059,41 +1064,125 @@ void MainWindow::openFile()
     }
     
     QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::critical(this, "Ошибка", "Не удалось открыть файл");
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, tr("Error"), tr("Failed to open file"));
         return;
     }
     
-    // Автоопределение кодировки
-    QTextStream in(&file);
-    in.setAutoDetectUnicode(true);  // Включает автоопределение UTF-8, UTF-16, UTF-32 и системной кодировки
+    QByteArray rawData = file.readAll();
+    file.close();
     
-    // Проверяем наличие BOM для более точного определения
-    QByteArray bom = file.peek(4);
+    // Получаем кодировку по умолчанию из настроек
+    Settings& settings = Settings::instance();
+    QString defaultEncoding = settings.defaultEncoding();
+    
+    QTextCodec* codec = nullptr;
+    QString content;
+    bool ok = false;
+    
+    // Пробуем определить кодировку по BOM
+    QByteArray bom = rawData.left(4);
     if (bom.startsWith(QByteArray::fromHex("EFBBBF"))) {
-        in.setCodec("UTF-8");
+        codec = QTextCodec::codecForName("UTF-8");
+        content = codec->toUnicode(rawData);
+        ok = true;
     } else if (bom.startsWith(QByteArray::fromHex("FFFE0000")) || bom.startsWith(QByteArray::fromHex("0000FEFF"))) {
-        in.setCodec("UTF-32");
+        codec = QTextCodec::codecForName("UTF-32");
+        content = codec->toUnicode(rawData);
+        ok = true;
     } else if (bom.startsWith(QByteArray::fromHex("FFFE")) || bom.startsWith(QByteArray::fromHex("FEFF"))) {
-        in.setCodec("UTF-16");
+        codec = QTextCodec::codecForName("UTF-16");
+        content = codec->toUnicode(rawData);
+        ok = true;
     } else {
-        // Если BOM нет, пробуем определить по содержимому или используем системную
-        in.setAutoDetectUnicode(true);
+        // Если BOM нет, пробуем кодировку по умолчанию
+        codec = QTextCodec::codecForName(defaultEncoding.toUtf8());
+        if (codec) {
+            content = codec->toUnicode(rawData);
+            // Проверяем, нет ли символов замены (replacement characters)
+            if (!content.contains(QChar(0xFFFD))) {
+                ok = true;
+            }
+        }
+        
+        // Если не получилось или есть символы замены, пробуем автоопределение
+        if (!ok) {
+            // Пробуем UTF-8 без BOM
+            codec = QTextCodec::codecForName("UTF-8");
+            content = codec->toUnicode(rawData);
+            if (!content.contains(QChar(0xFFFD))) {
+                ok = true;
+            } else {
+                // Пробуем системную кодировку
+                codec = QTextCodec::codecForLocale();
+                content = codec->toUnicode(rawData);
+                if (!content.contains(QChar(0xFFFD))) {
+                    ok = true;
+                    defaultEncoding = QString(codec->name());
+                } else {
+                    // Если всё ещё есть проблемы, показываем диалог выбора кодировки
+                    QStringList codecNames = {
+                        "UTF-8", "Windows-1251", "Windows-1252", "KOI8-R", "IBM866", 
+                        "ISO-8859-1", "ISO-8859-5", "UTF-16", "UTF-32"
+                    };
+                    
+                    bool codecOk = false;
+                    while (!codecOk) {
+                        QString selectedCodec = QInputDialog::getItem(
+                            this,
+                            tr("Select Encoding"),
+                            tr("Could not auto-detect encoding. Please select:"),
+                            codecNames,
+                            0,
+                            false,
+                            &codecOk
+                        );
+                        
+                        if (!codecOk) {
+                            return; // Пользователь отменил
+                        }
+                        
+                        codec = QTextCodec::codecForName(selectedCodec.toUtf8());
+                        if (codec) {
+                            content = codec->toUnicode(rawData);
+                            if (!content.contains(QChar(0xFFFD))) {
+                                ok = true;
+                                defaultEncoding = selectedCodec;
+                            } else {
+                                int reply = QMessageBox::question(
+                                    this,
+                                    tr("Invalid Encoding"),
+                                    tr("Selected encoding (%1) produced invalid characters. Try another?").arg(selectedCodec),
+                                    QMessageBox::Yes | QMessageBox::No
+                                );
+                                if (reply == QMessageBox::No) {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     
-    QString content = in.readAll();
-    file.close();
+    if (!ok || content.isEmpty()) {
+        QMessageBox::critical(this, tr("Error"), tr("Failed to decode file content"));
+        return;
+    }
     
     m_markdownEditor->setPlainText(content);
     m_currentFile = fileName;
+    m_currentEncoding = codec ? QString(codec->name()) : defaultEncoding;
     m_isModified = false;
     updateWindowTitle();
     
-    // Обновляем счетчик строк после открытия файла
+    // Обновляем метки в статус-баре
     int lineCount = m_markdownEditor->blockCount();
     m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+    m_encodingLabel->setText(m_currentEncoding);
     
-    m_statusBar->showMessage(tr("File opened: ") + fileName);
+    m_statusBar->showMessage(tr("File opened: ") + fileName + " (" + m_currentEncoding + ")");
 }
 
 /**

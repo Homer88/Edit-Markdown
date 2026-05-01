@@ -12,6 +12,7 @@
 #include <QSplitter>
 #include <QTranslator>
 #include <QWidget>
+#include <QTextBlock>
 #include "markdownparser.h"
 #include "spellchecker.h"
 #include "helpwindow.h"
@@ -47,6 +48,12 @@ public:
     explicit PlainTextEditWithLineNumbers(QWidget *parent = nullptr);
     
     LineNumberArea* lineNumberArea() const { return m_lineNumberArea; }
+    
+    // Публичные методы-обертки для доступа к protected методам QPlainTextEdit
+    QTextBlock firstVisibleBlockPublic() const { return firstVisibleBlock(); }
+    QRectF blockBoundingGeometryPublic(const QTextBlock &block) const { return blockBoundingGeometry(block); }
+    QPointF contentOffsetPublic() const { return contentOffset(); }
+    QRectF blockBoundingRectPublic(const QTextBlock &block) const { return blockBoundingRect(block); }
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -57,6 +64,8 @@ private slots:
 
 private:
     LineNumberArea *m_lineNumberArea;
+    
+    friend class LineNumberArea;
 };
 
 /**
@@ -359,6 +368,7 @@ private:
     // Состояние приложения
     bool m_isWysiwygMode;              ///< Флаг режима WYSIWYG
     QString m_currentFile;             ///< Путь к текущему файлу
+    QString m_currentEncoding;         ///< Текущая кодировка файла
     bool m_isModified;                 ///< Флаг изменений в документе
     
     // Проверка орфографии

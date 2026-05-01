@@ -26,6 +26,7 @@ public:
     // Persistence
     bool saveToFile(const QString& filePath);
     bool loadFromFile(const QString& filePath);
+    QString configPath() const;
 
 private:
     Settings();
@@ -36,8 +37,6 @@ private:
     int m_fontSize;
     QString m_language;
     QString m_defaultEncoding;
-    
-    QString configPath() const;
 };
 
 #endif // SETTINGS_H

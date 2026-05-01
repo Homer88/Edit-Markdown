@@ -197,12 +197,19 @@ void MainWindow::initUI()
  */
 void MainWindow::createToolBar()
 {
+    // Удаляем существующую панель инструментов, чтобы избежать дублирования при смене языка
+    if (m_toolBar) {
+        removeToolBar(m_toolBar);
+        delete m_toolBar;
+        m_toolBar = nullptr;
+    }
+    
     m_toolBar = addToolBar("Formatting");
     m_toolBar->setMovable(false);
     
     // Кнопки форматирования текста
     QAction* boldAction = m_toolBar->addAction("B");
-    boldAction->setToolTip("Жирный текст (Ctrl+B)");
+    boldAction->setToolTip(tr("Bold (Ctrl+B)"));
     QFont boldFont = boldAction->font();
     boldFont.setBold(true);
     boldFont.setPointSize(12);
@@ -210,7 +217,7 @@ void MainWindow::createToolBar()
     connect(boldAction, &QAction::triggered, this, &MainWindow::insertBold);
     
     QAction* italicAction = m_toolBar->addAction("I");
-    italicAction->setToolTip("Курсив (Ctrl+I)");
+    italicAction->setToolTip(tr("Italic (Ctrl+I)"));
     QFont italicFont = italicAction->font();
     italicFont.setItalic(true);
     italicFont.setPointSize(12);
@@ -218,7 +225,7 @@ void MainWindow::createToolBar()
     connect(italicAction, &QAction::triggered, this, &MainWindow::insertItalic);
     
     QAction* strikeAction = m_toolBar->addAction("S");
-    strikeAction->setToolTip("Зачеркнутый текст");
+    strikeAction->setToolTip(tr("Strikethrough"));
     QFont strikeFont = strikeAction->font();
     strikeFont.setStrikeOut(true);
     strikeFont.setPointSize(12);
@@ -229,118 +236,111 @@ void MainWindow::createToolBar()
     
     // Кнопки заголовков
     QAction* h1Action = m_toolBar->addAction("H1");
-    h1Action->setToolTip("Заголовок 1 уровня");
+    h1Action->setToolTip(tr("Heading 1"));
     h1Action->setFont(QFont(h1Action->font().family(), 12, QFont::Bold));
     connect(h1Action, &QAction::triggered, this, &MainWindow::insertHeader1);
     
     QAction* h2Action = m_toolBar->addAction("H2");
-    h2Action->setToolTip("Заголовок 2 уровня");
+    h2Action->setToolTip(tr("Heading 2"));
     h2Action->setFont(QFont(h2Action->font().family(), 11, QFont::Bold));
     connect(h2Action, &QAction::triggered, this, &MainWindow::insertHeader2);
     
     QAction* h3Action = m_toolBar->addAction("H3");
-    h3Action->setToolTip("Заголовок 3 уровня");
+    h3Action->setToolTip(tr("Heading 3"));
     h3Action->setFont(QFont(h3Action->font().family(), 10, QFont::Bold));
     connect(h3Action, &QAction::triggered, this, &MainWindow::insertHeader3);
     
     m_toolBar->addSeparator();
     
     // Кнопки списков
-    QAction* bulletAction = m_toolBar->addAction("• Список");
-    bulletAction->setToolTip("Маркированный список");
+    QAction* bulletAction = m_toolBar->addAction(tr("• List"));
+    bulletAction->setToolTip(tr("Bullet List"));
     connect(bulletAction, &QAction::triggered, this, &MainWindow::insertBulletList);
     
-    QAction* numberAction = m_toolBar->addAction("1. Список");
-    numberAction->setToolTip("Нумерованный список");
+    QAction* numberAction = m_toolBar->addAction(tr("1. List"));
+    numberAction->setToolTip(tr("Numbered List"));
     connect(numberAction, &QAction::triggered, this, &MainWindow::insertNumberedList);
     
     m_toolBar->addSeparator();
     
     // Кнопки остальных элементов
-    QAction* quoteAction = m_toolBar->addAction("Цитата");
-    quoteAction->setToolTip("Цитата");
+    QAction* quoteAction = m_toolBar->addAction(tr("Quote"));
+    quoteAction->setToolTip(tr("Blockquote"));
     connect(quoteAction, &QAction::triggered, this, &MainWindow::insertBlockquote);
     
-    QAction* codeAction = m_toolBar->addAction("Код");
-    codeAction->setToolTip("Код");
+    QAction* codeAction = m_toolBar->addAction(tr("Code"));
+    codeAction->setToolTip(tr("Inline Code"));
     connect(codeAction, &QAction::triggered, this, &MainWindow::insertCode);
     
-    QAction* linkAction = m_toolBar->addAction("Ссылка");
-    linkAction->setToolTip("Вставить ссылку");
+    QAction* linkAction = m_toolBar->addAction(tr("Link"));
+    linkAction->setToolTip(tr("Insert Link"));
     connect(linkAction, &QAction::triggered, this, &MainWindow::insertLink);
     
-    QAction* imageAction = m_toolBar->addAction("Изображение");
-    imageAction->setToolTip("Вставить изображение");
+    QAction* imageAction = m_toolBar->addAction(tr("Image"));
+    imageAction->setToolTip(tr("Insert Image"));
     connect(imageAction, &QAction::triggered, this, &MainWindow::insertImage);
     
-    QAction* hrAction = m_toolBar->addAction("Линия");
-    hrAction->setToolTip("Горизонтальная линия");
+    QAction* hrAction = m_toolBar->addAction(tr("HR"));
+    hrAction->setToolTip(tr("Horizontal Rule"));
     connect(hrAction, &QAction::triggered, this, &MainWindow::insertHorizontalRule);
     
     m_toolBar->addSeparator();
     
-    // Кнопка таблицы
-    QAction* tableAction = m_toolBar->addAction("Таблица");
-    tableAction->setToolTip("Вставить таблицу");
-    connect(tableAction, &QAction::triggered, this, &MainWindow::insertTable);
+    // Кнопка таблицы с выпадающим меню
+    QToolButton* tableToolBtn = new QToolButton(m_toolBar);
+    tableToolBtn->setText(tr("Table"));
+    tableToolBtn->setToolTip(tr("Insert table and table operations"));
+    tableToolBtn->setPopupMode(QToolButton::MenuButtonPopup);
     
     // Создаем меню для операций с таблицей
-    QMenu* tableMenu = new QMenu(m_toolBar);
-    tableMenu->setTitle("▼");
-    tableMenu->setToolTip("Операции с таблицей");
+    QMenu* tableMenu = new QMenu(tableToolBtn);
     
-    QAction* insertRowAction = tableMenu->addAction("Вставить строку");
-    insertRowAction->setToolTip("Вставить строку в таблицу");
+    QAction* insertTableAction = tableMenu->addAction(tr("Insert Table"));
+    connect(insertTableAction, &QAction::triggered, this, &MainWindow::insertTable);
+    
+    tableMenu->addSeparator();
+    
+    QAction* insertRowAction = tableMenu->addAction(tr("Insert Row"));
+    insertRowAction->setToolTip(tr("Insert a row into the table"));
     connect(insertRowAction, &QAction::triggered, this, &MainWindow::insertTableRow);
     
-    QAction* insertColAction = tableMenu->addAction("Вставить столбец");
-    insertColAction->setToolTip("Вставить столбец в таблицу");
+    QAction* insertColAction = tableMenu->addAction(tr("Insert Column"));
+    insertColAction->setToolTip(tr("Insert a column into the table"));
     connect(insertColAction, &QAction::triggered, this, &MainWindow::insertTableColumn);
     
     tableMenu->addSeparator();
     
-    QAction* deleteRowAction = tableMenu->addAction("Удалить строку");
-    deleteRowAction->setToolTip("Удалить строку из таблицы");
+    QAction* deleteRowAction = tableMenu->addAction(tr("Delete Row"));
+    deleteRowAction->setToolTip(tr("Delete a row from the table"));
     connect(deleteRowAction, &QAction::triggered, this, &MainWindow::deleteTableRow);
     
-    QAction* deleteColAction = tableMenu->addAction("Удалить столбец");
-    deleteColAction->setToolTip("Удалить столбец из таблицы");
+    QAction* deleteColAction = tableMenu->addAction(tr("Delete Column"));
+    deleteColAction->setToolTip(tr("Delete a column from the table"));
     connect(deleteColAction, &QAction::triggered, this, &MainWindow::deleteTableColumn);
     
-    QWidget* tableWidget = new QWidget(m_toolBar);
-    QHBoxLayout* tableLayout = new QHBoxLayout(tableWidget);
-    tableLayout->setContentsMargins(0, 0, 0, 0);
-    tableLayout->setSpacing(2);
-    QToolButton* tableToolBtn = new QToolButton();
-    tableToolBtn->setDefaultAction(tableAction);
     tableToolBtn->setMenu(tableMenu);
-    tableToolBtn->setPopupMode(QToolButton::MenuButtonPopup);
-    tableLayout->addWidget(tableToolBtn);
-    
-    // Заменяем действие таблицы на виджет с меню
-    m_toolBar->removeAction(tableAction);
-    m_toolBar->addWidget(tableWidget);
+    m_toolBar->addWidget(tableToolBtn);
     
     // Кнопка блока кода
-    QAction* codeBlockAction = m_toolBar->addAction("Блок кода");
-    codeBlockAction->setToolTip("Вставить многострочный блок кода");
+    QAction* codeBlockAction = m_toolBar->addAction(tr("Code Block"));
+    codeBlockAction->setToolTip(tr("Insert multi-line code block"));
     connect(codeBlockAction, &QAction::triggered, this, &MainWindow::insertCodeBlock);
     
     // Кнопка задачи
-    QAction* taskAction = m_toolBar->addAction("Задача");
-    taskAction->setToolTip("Вставить задачу (checkbox)");
+    QAction* taskAction = m_toolBar->addAction(tr("Task"));
+    taskAction->setToolTip(tr("Insert task (checkbox)"));
     connect(taskAction, &QAction::triggered, this, &MainWindow::insertTask);
     
     // Кнопка спецсимволов
-    QAction* specialAction = m_toolBar->addAction("Спецсимволы");
-    specialAction->setToolTip("Вставить специальные символы");
+    QAction* specialAction = m_toolBar->addAction(tr("Special Chars"));
+    specialAction->setToolTip(tr("Insert special characters"));
     connect(specialAction, &QAction::triggered, this, &MainWindow::insertSpecialCharacter);
     
     m_toolBar->addSeparator();
     
     // Кнопка проверки орфографии
     QAction* spellCheckAction = m_toolBar->addAction("ABC ✓");
-    spellCheckAction->setToolTip("Проверить орфографию (F7)");
+    spellCheckAction->setToolTip(tr("Check Spelling (F7)"));
     spellCheckAction->setFont(QFont(spellCheckAction->font().family(), 10, QFont::Bold));
     connect(spellCheckAction, &QAction::triggered, this, &MainWindow::checkSpelling);
     
@@ -351,15 +351,15 @@ void MainWindow::createToolBar()
     modeGroup->setExclusive(true);
     
     // Переключатели режимов
-    m_wysiwygAction = m_toolBar->addAction("WYSIWYG");
-    m_wysiwygAction->setToolTip("Режим визуального редактирования");
+    m_wysiwygAction = m_toolBar->addAction(tr("WYSIWYG"));
+    m_wysiwygAction->setToolTip(tr("Visual Editing Mode"));
     m_wysiwygAction->setCheckable(true);
     m_wysiwygAction->setChecked(m_isWysiwygMode);
     m_wysiwygAction->setActionGroup(modeGroup);
     connect(m_wysiwygAction, &QAction::toggled, this, &MainWindow::toggleWysiwygMode);
     
-    m_markdownAction = m_toolBar->addAction("Markdown");
-    m_markdownAction->setToolTip("Режим редактирования Markdown");
+    m_markdownAction = m_toolBar->addAction(tr("Markdown"));
+    m_markdownAction->setToolTip(tr("Markdown Editing Mode"));
     m_markdownAction->setCheckable(true);
     m_markdownAction->setChecked(!m_isWysiwygMode);
     m_markdownAction->setActionGroup(modeGroup);

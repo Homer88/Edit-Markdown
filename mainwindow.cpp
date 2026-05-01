@@ -1366,7 +1366,114 @@ void MainWindow::insertCode()
  */
 void MainWindow::insertLink()
 {
-    insertMarkdownFormatting("[", "](url)");
+    if (m_isWysiwygMode) {
+        QTextCursor cursor = m_previewEditor->textCursor();
+        QString selectedText = cursor.selectedText();
+        
+        QDialog dialog(this);
+        dialog.setWindowTitle(tr("Добавление ссылки"));
+        dialog.setMinimumWidth(400);
+        
+        QVBoxLayout* layout = new QVBoxLayout(&dialog);
+        
+        QLabel* textLabel = new QLabel(tr("Текст ссылки:"), &dialog);
+        QLineEdit* textEdit = new QLineEdit(selectedText, &dialog);
+        
+        QLabel* urlLabel = new QLabel(tr("URL или путь к файлу:"), &dialog);
+        QHBoxLayout* urlLayout = new QHBoxLayout();
+        QLineEdit* urlEdit = new QLineEdit(&dialog);
+        QPushButton* browseButton = new QPushButton(tr("Обзор..."), &dialog);
+        urlLayout->addWidget(urlEdit);
+        urlLayout->addWidget(browseButton);
+        
+        connect(browseButton, &QPushButton::clicked, this, [&urlEdit, this]() {
+            QString fileName = QFileDialog::getOpenFileName(this, tr("Выберите файл"), "", tr("Все файлы (*)"));
+            if (!fileName.isEmpty()) {
+                urlEdit->setText(fileName);
+            }
+        });
+        
+        QHBoxLayout* buttonLayout = new QHBoxLayout();
+        buttonLayout->addStretch();
+        QPushButton* okButton = new QPushButton(tr("ОК"), &dialog);
+        QPushButton* cancelButton = new QPushButton(tr("Отмена"), &dialog);
+        buttonLayout->addWidget(okButton);
+        buttonLayout->addWidget(cancelButton);
+        
+        layout->addWidget(textLabel);
+        layout->addWidget(textEdit);
+        layout->addWidget(urlLabel);
+        layout->addLayout(urlLayout);
+        layout->addLayout(buttonLayout);
+        
+        connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+        connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+        
+        if (dialog.exec() == QDialog::Accepted) {
+            QString text = textEdit->text();
+            QString url = urlEdit->text();
+            
+            if (!text.isEmpty() && !url.isEmpty()) {
+                if (cursor.hasSelection()) {
+                    cursor.insertHtml(QString("<a href=\"%1\">%2</a>").arg(url, text));
+                } else {
+                    cursor.insertHtml(QString("<a href=\"%1\">%2</a>").arg(url, text));
+                }
+                m_previewEditor->setTextCursor(cursor);
+            }
+        }
+    } else {
+        // Для режима Markdown
+        QString selectedText = m_markdownEditor->textCursor().selectedText();
+        
+        QDialog dialog(this);
+        dialog.setWindowTitle(tr("Добавление ссылки"));
+        dialog.setMinimumWidth(400);
+        
+        QVBoxLayout* layout = new QVBoxLayout(&dialog);
+        
+        QLabel* textLabel = new QLabel(tr("Текст ссылки:"), &dialog);
+        QLineEdit* textEdit = new QLineEdit(selectedText, &dialog);
+        
+        QLabel* urlLabel = new QLabel(tr("URL или путь к файлу:"), &dialog);
+        QHBoxLayout* urlLayout = new QHBoxLayout();
+        QLineEdit* urlEdit = new QLineEdit(&dialog);
+        QPushButton* browseButton = new QPushButton(tr("Обзор..."), &dialog);
+        urlLayout->addWidget(urlEdit);
+        urlLayout->addWidget(browseButton);
+        
+        connect(browseButton, &QPushButton::clicked, this, [&urlEdit, this]() {
+            QString fileName = QFileDialog::getOpenFileName(this, tr("Выберите файл"), "", tr("Все файлы (*)"));
+            if (!fileName.isEmpty()) {
+                urlEdit->setText(fileName);
+            }
+        });
+        
+        QHBoxLayout* buttonLayout = new QHBoxLayout();
+        buttonLayout->addStretch();
+        QPushButton* okButton = new QPushButton(tr("ОК"), &dialog);
+        QPushButton* cancelButton = new QPushButton(tr("Отмена"), &dialog);
+        buttonLayout->addWidget(okButton);
+        buttonLayout->addWidget(cancelButton);
+        
+        layout->addWidget(textLabel);
+        layout->addWidget(textEdit);
+        layout->addWidget(urlLabel);
+        layout->addLayout(urlLayout);
+        layout->addLayout(buttonLayout);
+        
+        connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+        connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+        
+        if (dialog.exec() == QDialog::Accepted) {
+            QString text = textEdit->text();
+            QString url = urlEdit->text();
+            
+            if (!text.isEmpty() && !url.isEmpty()) {
+                insertMarkdownAtCursor(QString("[%1](%2)").arg(text, url));
+            }
+        }
+    }
 }
 
 /**
@@ -2040,8 +2147,13 @@ void MainWindow::showEditorContextMenu(const QPoint& pos)
  */
 void MainWindow::makeSelectedTextLink()
 {
-    QTextCursor cursor = m_markdownEditor->textCursor();
-    QString selectedText = cursor.selectedText();
+    QString selectedText;
+    
+    if (m_isWysiwygMode) {
+        selectedText = m_previewEditor->textCursor().selectedText();
+    } else {
+        selectedText = m_markdownEditor->textCursor().selectedText();
+    }
     
     if (selectedText.isEmpty()) {
         return;
@@ -2093,9 +2205,15 @@ void MainWindow::makeSelectedTextLink()
         QString url = urlEdit->text();
         
         if (!url.isEmpty()) {
-            // Заменяем выделенный текст на ссылку
-            QString linkMarkdown = QString("[%1](%2)").arg(linkText, url);
-            cursor.insertText(linkMarkdown);
+            if (m_isWysiwygMode) {
+                QTextCursor cursor = m_previewEditor->textCursor();
+                cursor.insertHtml(QString("<a href=\"%1\">%2</a>").arg(url, linkText));
+                m_previewEditor->setTextCursor(cursor);
+            } else {
+                QTextCursor cursor = m_markdownEditor->textCursor();
+                QString linkMarkdown = QString("[%1](%2)").arg(linkText, url);
+                cursor.insertText(linkMarkdown);
+            }
         }
     }
 }

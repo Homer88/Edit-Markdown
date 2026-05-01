@@ -2639,7 +2639,7 @@ void MainWindow::exportToPdf()
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::PdfFormat);
     printer.setOutputFileName(fileName);
-    printer.setPageSize(QPageSize(QPageSize::A4));
+    printer.setPageSize(QPrinter::A4);
     printer.setPageMargins(QMarginsF(15, 15, 15, 15), QPageLayout::Millimeter);
     
     // Используем HTML из предпросмотра для печати

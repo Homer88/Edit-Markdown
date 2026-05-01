@@ -1,3 +1,4 @@
+```
 # Compiled and build artifacts
 *.o
 *.obj
@@ -14,37 +15,109 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.mypy_cache/
-.pytest_cache/
+.Python
+env/
+env.bak/
+venv.bak/
+.Pipfile.lock
 
 # Build directories
 build/
 dist/
-target/
 *.egg-info/
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
+.coverage
+htmlcov/
+.coverage.*
+.nyc_output/
+coverage-final.json
 
 # Logs and temp files
 *.log
 *.tmp
 *.temp
-
-# System files
+*.swp
+*.swo
+*~
 .DS_Store
 Thumbs.db
+
+# Environment variables
 .env
 .env.local
-*.env.*
+.env.*
+!.env.example
 
-# Coverage reports
-coverage/
-htmlcov/
-.coverage
+# Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+nbproject/
+.settings/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*:*
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# C/C++ specific
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.dylib
+*.lib
+*.exp
+*.ilk
+*.pdb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Qt/C++ specific
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.moc
+*.moc.cpp
+*.qm
+*.prl
+Makefile*
+obj/
+moc_*
+qrc_*
+ui_*
 
 # Compressed files
 *.zip
@@ -70,8 +143,4 @@ htmlcov/
 *.tar.xz
 *.tar.zst
 
-# Gradle
-.gradle/
-
-# Node
-node_modules/
+```

@@ -25,9 +25,10 @@ set(PROJECT_SOURCES
     resources.qrc
 )
 
-# Hunspell библиотека
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(HUNSPELL REQUIRED hunspell)
+# Hunspell библиотека (локальная версия)
+# Используем локальные заголовки и библиотеку из папки hunspell/
+set(HUNSPELL_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/hunspell")
+set(HUNSPELL_LIBRARIES "${CMAKE_SOURCE_DIR}/hunspell/libhunspell.lib")
 
 # Создаем исполняемый файл
 add_executable(markdown-editor ${PROJECT_SOURCES})

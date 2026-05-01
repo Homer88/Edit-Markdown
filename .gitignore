@@ -1,9 +1,5 @@
 ```
-# Build scripts and artifacts
-scripts/build-*.sh
-scripts/build-*.bat
-
-# Compiled and binary files
+# Compiled and build artifacts
 *.o
 *.obj
 *.exe
@@ -12,11 +8,6 @@ scripts/build-*.bat
 *.a
 *.out
 
-# Build directories
-build/
-dist/
-target/
-
 # Dependencies
 node_modules/
 venv/
@@ -24,7 +15,13 @@ venv/
 __pycache__/
 .mypy_cache/
 .pytest_cache/
+target/
 .gradle/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
 
 # Environment
 .env
@@ -34,19 +31,12 @@ __pycache__/
 # Editors
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# Logs and temp files
-*.log
-*.tmp
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# System files
-.DS_Store
-Thumbs.db
+# Build systems
+build/
+dist/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
 ```

@@ -3,31 +3,12 @@
 #include <QDebug>
 #include <QRegularExpression>
 
-// Простые функции парсинга для тестирования (заглушки, замените на реальные из проекта)
+// Подключаем реальный парсер из проекта
+#include "../markdownparser.h"
+
 QString markdownToHtml(const QString &markdown) {
-    QString html = markdown;
-    
-    // Обработка заголовков
-    html.replace(QRegularExpression("^###### (.*$)", QRegularExpression::MultilineOption), "<h6>\\1</h6>");
-    html.replace(QRegularExpression("^##### (.*$)", QRegularExpression::MultilineOption), "<h5>\\1</h5>");
-    html.replace(QRegularExpression("^#### (.*$)", QRegularExpression::MultilineOption), "<h4>\\1</h4>");
-    html.replace(QRegularExpression("^### (.*$)", QRegularExpression::MultilineOption), "<h3>\\1</h3>");
-    html.replace(QRegularExpression("^## (.*$)", QRegularExpression::MultilineOption), "<h2>\\1</h2>");
-    html.replace(QRegularExpression("^# (.*$)", QRegularExpression::MultilineOption), "<h1>\\1</h1>");
-    
-    // Обработка переносов строк - разбиваем на абзацы по двойному переносу
-    QStringList paragraphs = html.split("\n\n");
-    for (int i = 0; i < paragraphs.size(); ++i) {
-        QString p = paragraphs[i].trimmed();
-        if (!p.isEmpty()) {
-            // Заменяем одиночные переносы на <br> внутри абзаца
-            p.replace("\n", "<br>");
-            paragraphs[i] = "<p>" + p + "</p>";
-        }
-    }
-    html = paragraphs.join("\n");
-    
-    return html;
+    MarkdownParser parser;
+    return parser.parse(markdown);
 }
 
 class ParserTests : public QObject {

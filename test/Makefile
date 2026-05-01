@@ -17,7 +17,7 @@ CXX           = g++
 DEFINES       = -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_TESTLIB_LIB -DQT_CORE_LIB -DQT_TESTCASE_BUILDDIR='"/workspace/test"'
 CFLAGS        = -pipe -O2 -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -O2 -std=gnu++1z -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtTest -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++
+INCPATH       = -I. -I.. -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtTest -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++
 QMAKE         = /usr/lib/qt5/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -52,8 +52,10 @@ OBJECTS_DIR   = ./
 
 ####### Files
 
-SOURCES       = parser_tests.cpp 
-OBJECTS       = parser_tests.o
+SOURCES       = parser_tests.cpp \
+		../markdownparser.cpp 
+OBJECTS       = parser_tests.o \
+		markdownparser.o
 DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/unix.conf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/linux.conf \
@@ -131,7 +133,8 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/exceptions.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/yacc.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/lex.prf \
-		parser_tests.pro  parser_tests.cpp
+		parser_tests.pro ../markdownparser.h parser_tests.cpp \
+		../markdownparser.cpp
 QMAKE_TARGET  = parser_tests
 DESTDIR       = 
 TARGET        = parser_tests
@@ -315,7 +318,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents parser_tests.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents ../markdownparser.h $(DISTDIR)/
+	$(COPY_FILE) --parents parser_tests.cpp ../markdownparser.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -354,9 +358,10 @@ compiler_moc_source_make_all: parser_tests.moc
 compiler_moc_source_clean:
 	-$(DEL_FILE) parser_tests.moc
 parser_tests.moc: parser_tests.cpp \
+		../markdownparser.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
-	/usr/lib/qt5/bin/moc $(DEFINES) --include /workspace/test/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/workspace/test -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtTest -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/12 -I/usr/include/x86_64-linux-gnu/c++/12 -I/usr/include/c++/12/backward -I/usr/lib/gcc/x86_64-linux-gnu/12/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include parser_tests.cpp -o parser_tests.moc
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /workspace/test/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/workspace/test -I/workspace -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtTest -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/12 -I/usr/include/x86_64-linux-gnu/c++/12 -I/usr/include/c++/12/backward -I/usr/lib/gcc/x86_64-linux-gnu/12/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include parser_tests.cpp -o parser_tests.moc
 
 compiler_yacc_decl_make_all:
 compiler_yacc_decl_clean:
@@ -368,8 +373,12 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_source_clean
 
 ####### Compile
 
-parser_tests.o: parser_tests.cpp parser_tests.moc
+parser_tests.o: parser_tests.cpp ../markdownparser.h \
+		parser_tests.moc
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o parser_tests.o parser_tests.cpp
+
+markdownparser.o: ../markdownparser.cpp ../markdownparser.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o markdownparser.o ../markdownparser.cpp
 
 ####### Install
 

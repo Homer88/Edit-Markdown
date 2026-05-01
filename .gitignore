@@ -1,24 +1,38 @@
 ```
-# Qt/MOC build artifacts
-*.moc
-moc_*.h
-*.pro.user
-*.pro.user.*
-*.qrc
-*.qm
+# Compiled and binary files
+*.o
+*.obj
+*.out
+*.exe
+*.dll
+*.so
+*.a
 
-# Build directories
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+target/
+.gradle/
+
+# Build artifacts
 build/
 dist/
 
-# Temp files
-*.tmp
-*.temp
-
-# IDE files
+# Editor/IDE files
 .vscode/
 .idea/
+*.swp
+*.swo
+*.tmp
 
 # Logs
 *.log
+
+# Test binaries
+test/*.o
+test/*_tests
 ```

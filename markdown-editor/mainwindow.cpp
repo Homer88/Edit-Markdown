@@ -12,6 +12,7 @@
 #include <QGridLayout>
 #include <QInputDialog>
 #include <QFileInfo>
+#include <QToolButton>
 
 /**
  * @brief Конструктор главного окна
@@ -183,6 +184,44 @@ void MainWindow::createToolBar()
     QAction* tableAction = m_toolBar->addAction("Таблица");
     tableAction->setToolTip("Вставить таблицу");
     connect(tableAction, &QAction::triggered, this, &MainWindow::insertTable);
+    
+    // Создаем меню для операций с таблицей
+    QMenu* tableMenu = new QMenu(m_toolBar);
+    tableMenu->setTitle("▼");
+    tableMenu->setToolTip("Операции с таблицей");
+    
+    QAction* insertRowAction = tableMenu->addAction("Вставить строку");
+    insertRowAction->setToolTip("Вставить строку в таблицу");
+    connect(insertRowAction, &QAction::triggered, this, &MainWindow::insertTableRow);
+    
+    QAction* insertColAction = tableMenu->addAction("Вставить столбец");
+    insertColAction->setToolTip("Вставить столбец в таблицу");
+    connect(insertColAction, &QAction::triggered, this, &MainWindow::insertTableColumn);
+    
+    tableMenu->addSeparator();
+    
+    QAction* deleteRowAction = tableMenu->addAction("Удалить строку");
+    deleteRowAction->setToolTip("Удалить строку из таблицы");
+    connect(deleteRowAction, &QAction::triggered, this, &MainWindow::deleteTableRow);
+    
+    QAction* deleteColAction = tableMenu->addAction("Удалить столбец");
+    deleteColAction->setToolTip("Удалить столбец из таблицы");
+    connect(deleteColAction, &QAction::triggered, this, &MainWindow::deleteTableColumn);
+    
+    QWidget* tableWidget = new QWidget(m_toolBar);
+    QHBoxLayout* tableLayout = new QHBoxLayout(tableWidget);
+    tableLayout->setContentsMargins(0, 0, 0, 0);
+    tableLayout->setSpacing(2);
+    tableLayout->addWidget(new QPushButton("Таблица"));
+    QToolButton* tableToolBtn = new QToolButton();
+    tableToolBtn->setMenu(tableMenu);
+    tableToolBtn->setPopupMode(QToolButton::InstantPopup);
+    tableToolBtn->setText("▼");
+    tableLayout->addWidget(tableToolBtn);
+    
+    // Заменяем действие таблицы на виджет с меню
+    m_toolBar->removeAction(tableAction);
+    m_toolBar->addWidget(tableWidget);
     
     // Кнопка блока кода
     QAction* codeBlockAction = m_toolBar->addAction("Блок кода");
@@ -681,6 +720,184 @@ void MainWindow::insertTable()
                     "| Ячейка 1    | Ячейка 2    | Ячейка 3    |\n"
                     "| Ячейка 4    | Ячейка 5    | Ячейка 6    |\n\n";
     insertMarkdownAtCursor(table);
+}
+
+/**
+ * @brief Вставка строки в таблицу
+ * Находит текущую позицию курсора в таблице и добавляет новую строку
+ */
+void MainWindow::insertTableRow()
+{
+    QString newRow = "| Новый текст  | Новый текст  | Новый текст  |\n";
+    insertMarkdownAtCursor(newRow);
+}
+
+/**
+ * @brief Вставка столбца в таблицу
+ * Добавляет новый столбец ко всем строкам таблицы
+ */
+void MainWindow::insertTableColumn()
+{
+    QPlainTextEdit* editor = m_markdownEditor;
+    QString text = editor->toPlainText();
+    int cursorPos = editor->textCursor().position();
+    
+    // Находим строку с курсором
+    QTextCursor cursor = editor->textCursor();
+    cursor.select(QTextCursor::BlockUnderCursor);
+    QString currentLine = cursor.selectedText();
+    
+    // Проверяем, находится ли курсор в таблице
+    if (!currentLine.contains("|")) {
+        // Если не в таблице, просто вставляем подсказку
+        insertMarkdownAtCursor("\n| Новый столбец |\n");
+        return;
+    }
+    
+    // Разбиваем текст на строки
+    QStringList lines = text.split("\n");
+    int currentLineNum = text.left(cursorPos).count("\n");
+    
+    bool inTable = false;
+    int tableStartLine = -1;
+    
+    // Ищем начало таблицы
+    for (int i = currentLineNum; i >= 0; --i) {
+        if (i < lines.size() && lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+            if (!inTable) {
+                tableStartLine = i;
+                inTable = true;
+            }
+        } else if (inTable) {
+            break;
+        }
+    }
+    
+    if (!inTable) {
+        insertMarkdownAtCursor(" | Новый столбец");
+        return;
+    }
+    
+    // Ищем конец таблицы
+    int tableEndLine = tableStartLine;
+    for (int i = tableStartLine; i < lines.size(); ++i) {
+        if (lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+            tableEndLine = i;
+        } else {
+            break;
+        }
+    }
+    
+    // Добавляем новый столбец к каждой строке таблицы
+    for (int i = tableStartLine; i <= tableEndLine; ++i) {
+        if (lines[i].trimmed().startsWith("|")) {
+            // Вставляем новый столбец перед последней вертикальной чертой
+            int lastPipePos = lines[i].lastIndexOf('|');
+            if (lastPipePos > 0) {
+                lines[i] = lines[i].left(lastPipePos) + " Новый столбец |" + lines[i].mid(lastPipePos + 1);
+            } else {
+                lines[i] += " Новый столбец |";
+            }
+        }
+    }
+    
+    // Обновляем текст
+    editor->setPlainText(lines.join("\n"));
+    
+    // Восстанавливаем позицию курсора
+    QTextCursor newCursor = editor->textCursor();
+    newCursor.setPosition(cursorPos);
+    editor->setTextCursor(newCursor);
+}
+
+/**
+ * @brief Удаление строки из таблицы
+ * Удаляет строку, в которой находится курсор
+ */
+void MainWindow::deleteTableRow()
+{
+    QPlainTextEdit* editor = m_markdownEditor;
+    QTextCursor cursor = editor->textCursor();
+    
+    // Выделяем всю строку
+    cursor.select(QTextCursor::BlockUnderCursor);
+    QString currentLine = cursor.selectedText();
+    
+    // Проверяем, находится ли курсор в таблице
+    if (!currentLine.contains("|")) {
+        QMessageBox::information(this, "Информация", "Курсор должен находиться в строке таблицы");
+        return;
+    }
+    
+    // Удаляем строку
+    cursor.removeSelectedText();
+    
+    // Удаляем символ новой строки если он есть
+    if (cursor.position() < editor->toPlainText().length()) {
+        cursor.deleteChar();
+    }
+}
+
+/**
+ * @brief Удаление столбца из таблицы
+ * Удаляет последний столбец из всех строк таблицы
+ */
+void MainWindow::deleteTableColumn()
+{
+    QPlainTextEdit* editor = m_markdownEditor;
+    QString text = editor->toPlainText();
+    int cursorPos = editor->textCursor().position();
+    
+    // Разбиваем текст на строки
+    QStringList lines = text.split("\n");
+    int currentLineNum = text.left(cursorPos).count("\n");
+    
+    bool inTable = false;
+    int tableStartLine = -1;
+    
+    // Ищем начало таблицы
+    for (int i = currentLineNum; i >= 0; --i) {
+        if (i < lines.size() && lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+            if (!inTable) {
+                tableStartLine = i;
+                inTable = true;
+            }
+        } else if (inTable) {
+            break;
+        }
+    }
+    
+    if (!inTable) {
+        QMessageBox::information(this, "Информация", "Курсор должен находиться в таблице");
+        return;
+    }
+    
+    // Ищем конец таблицы
+    int tableEndLine = tableStartLine;
+    for (int i = tableStartLine; i < lines.size(); ++i) {
+        if (lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+            tableEndLine = i;
+        } else {
+            break;
+        }
+    }
+    
+    // Удаляем последний столбец из каждой строки таблицы
+    for (int i = tableStartLine; i <= tableEndLine; ++i) {
+        if (lines[i].trimmed().startsWith("|")) {
+            // Находим предпоследнюю вертикальную черту
+            int lastPipePos = lines[i].lastIndexOf('|');
+            if (lastPipePos > 0) {
+                int secondLastPipePos = lines[i].lastIndexOf('|', lastPipePos - 1);
+                if (secondLastPipePos > 0) {
+                    lines[i] = lines[i].left(secondLastPipePos) + lines[i].mid(lastPipePos);
+                }
+            }
+        }
+    }
+    
+    // Обновляем текст
+    editor->setPlainText(lines.join("\n"));
 }
 
 /**

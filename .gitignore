@@ -1,41 +1,11 @@
 ```
 # Build artifacts
 markdown-editor/build/
+# Compiled files
 *.o
 *.obj
 *.out
-
-# CMake files
-CMakeFiles/
-CMakeCache.txt
-cmake_install.manifest
-Makefile
-
-# Generated files
-*.dir/
+# Auto-generated files
 *_autogen/
-
-# Dependencies
-node_modules/
-vendor/
-
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-
-# Environment
-.env
-.env.local
-*.env.*
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS specific
-.DS_Store
-Thumbs.db
+moc_*.cpp
 ```

@@ -449,4 +449,6 @@ CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qinputdialog.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlineedit.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QFileInfo \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/qfileinfo.h
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qfileinfo.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QToolButton \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtoolbutton.h

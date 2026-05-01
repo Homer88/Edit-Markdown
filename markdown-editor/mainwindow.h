@@ -145,6 +145,26 @@ private slots:
     void insertTable();
     
     /**
+     * @brief Вставка строки в таблицу
+     */
+    void insertTableRow();
+    
+    /**
+     * @brief Вставка столбца в таблицу
+     */
+    void insertTableColumn();
+    
+    /**
+     * @brief Удаление строки из таблицы
+     */
+    void deleteTableRow();
+    
+    /**
+     * @brief Удаление столбца из таблицы
+     */
+    void deleteTableColumn();
+    
+    /**
      * @brief Вставка специального символа
      */
     void insertSpecialCharacter();

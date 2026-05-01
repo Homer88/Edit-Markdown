@@ -2361,6 +2361,10 @@ void MainWindow::showSettings()
         
         // Обновляем статус-бар с новой кодировкой по умолчанию
         updateStatusBarInfo();
+        
+        // Пересоздаем подсветку синтаксиса для применения новой цветовой схемы
+        delete m_highlighter;
+        m_highlighter = new MarkdownHighlighter(m_markdownEditor->document());
     }
 }
 

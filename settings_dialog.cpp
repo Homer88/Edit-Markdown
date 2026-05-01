@@ -2,11 +2,13 @@
 #include "settings.h"
 #include <QDialogButtonBox>
 #include <QSettings>
+#include <QGroupBox>
+#include <QGridLayout>
 
 SettingsDialog::SettingsDialog(QWidget *parent)
     : QDialog(parent)
 {
-    setWindowTitle(tr("Основные настройки"));
+    setWindowTitle(tr("Настройки"));
     setModal(true);
     setupUI();
     loadCurrentSettings();
@@ -56,6 +58,15 @@ void SettingsDialog::setupUI() {
     
     formLayout->addRow(tr("Масштаб интерфейса:"), scaleLayout);
 
+    // Цветовая схема подсветки Markdown
+    m_colorSchemeCombo = new QComboBox(this);
+    m_colorSchemeCombo->addItem("По умолчанию", "default");
+    m_colorSchemeCombo->addItem("Тёмная", "dark");
+    m_colorSchemeCombo->addItem("Светлая", "light");
+    m_colorSchemeCombo->addItem("Синяя", "blue");
+    m_colorSchemeCombo->addItem("Зелёная", "green");
+    formLayout->addRow(tr("Цветовая схема:"), m_colorSchemeCombo);
+
     layout->addLayout(formLayout);
 
     // Кнопки
@@ -90,6 +101,12 @@ void SettingsDialog::loadCurrentSettings() {
     int scalePercent = qRound(interfaceScale * 100);
     m_interfaceScaleSlider->setValue(scalePercent);
     m_scaleValueLabel->setText(QString::number(scalePercent) + "%");
+    
+    // Загрузить цветовую схему
+    int schemeIndex = m_colorSchemeCombo->findData(settings.colorScheme());
+    if (schemeIndex >= 0) {
+        m_colorSchemeCombo->setCurrentIndex(schemeIndex);
+    }
 }
 
 int SettingsDialog::fontSize() const {
@@ -108,12 +125,17 @@ qreal SettingsDialog::interfaceScale() const {
     return m_interfaceScaleSlider->value() / 100.0;
 }
 
+QString SettingsDialog::colorScheme() const {
+    return m_colorSchemeCombo->currentData().toString();
+}
+
 void SettingsDialog::accept() {
     // Сохраняем настройки в синглтон
     auto& settings = Settings::instance();
     settings.setFontSize(fontSize());
     settings.setLanguage(language());
     settings.setDefaultEncoding(defaultEncoding());
+    settings.setColorScheme(colorScheme());
     
     // Сохраняем в файл
     settings.saveToFile(settings.configPath());
@@ -123,4 +145,16 @@ void SettingsDialog::accept() {
     appSettings.setValue("interfaceScale", interfaceScale());
     
     QDialog::accept();
+}
+
+void SettingsDialog::selectColorForElement() {
+    // Эта функция может быть использована для расширения функционала
+    // выбора индивидуальных цветов для каждого элемента подсветки
+}
+
+void SettingsDialog::updateColorButton(const QString& elementName, QPushButton* button, const QColor& color) {
+    Q_UNUSED(elementName);
+    Q_UNUSED(button);
+    Q_UNUSED(color);
+    // Эта функция может быть использована для обновления кнопок выбора цвета
 }

@@ -2,32 +2,36 @@
 #include <QTextDocument>
 #include <QColor>
 #include <QFont>
+#include "settings.h"
 
 MarkdownHighlighter::MarkdownHighlighter(QTextDocument *parent)
     : QSyntaxHighlighter(parent)
 {
-    // Настройка форматов
-    keywordFormat.setForeground(QColor(0, 100, 200));
+    // Получаем цвета из настроек
+    const auto& settings = Settings::instance();
+    
+    // Настройка форматов с использованием цветов из настроек
+    keywordFormat.setForeground(settings.keywordColor());
     keywordFormat.setFontWeight(QFont::Bold);
 
-    headerFormat.setForeground(QColor(150, 0, 0));
+    headerFormat.setForeground(settings.headerColor());
     headerFormat.setFontWeight(QFont::Bold);
     headerFormat.setFontPointSize(14);
 
     boldFormat.setFontWeight(QFont::Bold);
-    boldFormat.setForeground(QColor(0, 0, 0));
+    boldFormat.setForeground(settings.boldColor());
 
     italicFormat.setFontItalic(true);
-    italicFormat.setForeground(QColor(80, 80, 80));
+    italicFormat.setForeground(settings.italicColor());
 
-    codeFormat.setForeground(QColor(0, 128, 0));
+    codeFormat.setForeground(settings.codeColor());
     codeFormat.setFontFamily("Courier New");
-    codeFormat.setBackground(QColor(245, 245, 245));
+    codeFormat.setBackground(settings.codeBackgroundColor());
 
-    linkFormat.setForeground(QColor(0, 0, 255));
+    linkFormat.setForeground(settings.linkColor());
     linkFormat.setFontUnderline(true);
 
-    quoteFormat.setForeground(QColor(100, 100, 100));
+    quoteFormat.setForeground(settings.quoteColor());
     quoteFormat.setFontItalic(true);
 
     // Правила подсветки

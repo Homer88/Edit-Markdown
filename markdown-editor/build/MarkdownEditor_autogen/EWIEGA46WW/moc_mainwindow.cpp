@@ -1,0 +1,314 @@
+/****************************************************************************
+** Meta object code from reading C++ file 'mainwindow.h'
+**
+** Created by: The Qt Meta Object Compiler version 68 (Qt 6.4.2)
+**
+** WARNING! All changes made in this file will be lost!
+*****************************************************************************/
+
+#include <memory>
+#include "../../../mainwindow.h"
+#include <QtGui/qtextcursor.h>
+#include <QtCore/qmetatype.h>
+#if !defined(Q_MOC_OUTPUT_REVISION)
+#error "The header file 'mainwindow.h' doesn't include <QObject>."
+#elif Q_MOC_OUTPUT_REVISION != 68
+#error "This file was generated using the moc from 6.4.2. It"
+#error "cannot be used with the include files from this version of Qt."
+#error "(The moc has changed too much.)"
+#endif
+
+#ifndef Q_CONSTINIT
+#define Q_CONSTINIT
+#endif
+
+QT_BEGIN_MOC_NAMESPACE
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+namespace {
+struct qt_meta_stringdata_MainWindow_t {
+    uint offsetsAndSizes[52];
+    char stringdata0[11];
+    char stringdata1[14];
+    char stringdata2[1];
+    char stringdata3[18];
+    char stringdata4[19];
+    char stringdata5[9];
+    char stringdata6[9];
+    char stringdata7[11];
+    char stringdata8[8];
+    char stringdata9[11];
+    char stringdata10[13];
+    char stringdata11[20];
+    char stringdata12[14];
+    char stringdata13[14];
+    char stringdata14[14];
+    char stringdata15[17];
+    char stringdata16[19];
+    char stringdata17[17];
+    char stringdata18[11];
+    char stringdata19[11];
+    char stringdata20[12];
+    char stringdata21[21];
+    char stringdata22[12];
+    char stringdata23[23];
+    char stringdata24[16];
+    char stringdata25[11];
+};
+#define QT_MOC_LITERAL(ofs, len) \
+    uint(sizeof(qt_meta_stringdata_MainWindow_t::offsetsAndSizes) + ofs), len 
+Q_CONSTINIT static const qt_meta_stringdata_MainWindow_t qt_meta_stringdata_MainWindow = {
+    {
+        QT_MOC_LITERAL(0, 10),  // "MainWindow"
+        QT_MOC_LITERAL(11, 13),  // "onTextChanged"
+        QT_MOC_LITERAL(25, 0),  // ""
+        QT_MOC_LITERAL(26, 17),  // "toggleWysiwygMode"
+        QT_MOC_LITERAL(44, 18),  // "toggleMarkdownMode"
+        QT_MOC_LITERAL(63, 8),  // "openFile"
+        QT_MOC_LITERAL(72, 8),  // "saveFile"
+        QT_MOC_LITERAL(81, 10),  // "saveFileAs"
+        QT_MOC_LITERAL(92, 7),  // "newFile"
+        QT_MOC_LITERAL(100, 10),  // "insertBold"
+        QT_MOC_LITERAL(111, 12),  // "insertItalic"
+        QT_MOC_LITERAL(124, 19),  // "insertStrikeThrough"
+        QT_MOC_LITERAL(144, 13),  // "insertHeader1"
+        QT_MOC_LITERAL(158, 13),  // "insertHeader2"
+        QT_MOC_LITERAL(172, 13),  // "insertHeader3"
+        QT_MOC_LITERAL(186, 16),  // "insertBulletList"
+        QT_MOC_LITERAL(203, 18),  // "insertNumberedList"
+        QT_MOC_LITERAL(222, 16),  // "insertBlockquote"
+        QT_MOC_LITERAL(239, 10),  // "insertCode"
+        QT_MOC_LITERAL(250, 10),  // "insertLink"
+        QT_MOC_LITERAL(261, 11),  // "insertImage"
+        QT_MOC_LITERAL(273, 20),  // "insertHorizontalRule"
+        QT_MOC_LITERAL(294, 11),  // "insertTable"
+        QT_MOC_LITERAL(306, 22),  // "insertSpecialCharacter"
+        QT_MOC_LITERAL(329, 15),  // "insertCodeBlock"
+        QT_MOC_LITERAL(345, 10)   // "insertTask"
+    },
+    "MainWindow",
+    "onTextChanged",
+    "",
+    "toggleWysiwygMode",
+    "toggleMarkdownMode",
+    "openFile",
+    "saveFile",
+    "saveFileAs",
+    "newFile",
+    "insertBold",
+    "insertItalic",
+    "insertStrikeThrough",
+    "insertHeader1",
+    "insertHeader2",
+    "insertHeader3",
+    "insertBulletList",
+    "insertNumberedList",
+    "insertBlockquote",
+    "insertCode",
+    "insertLink",
+    "insertImage",
+    "insertHorizontalRule",
+    "insertTable",
+    "insertSpecialCharacter",
+    "insertCodeBlock",
+    "insertTask"
+};
+#undef QT_MOC_LITERAL
+} // unnamed namespace
+
+Q_CONSTINIT static const uint qt_meta_data_MainWindow[] = {
+
+ // content:
+      10,       // revision
+       0,       // classname
+       0,    0, // classinfo
+      24,   14, // methods
+       0,    0, // properties
+       0,    0, // enums/sets
+       0,    0, // constructors
+       0,       // flags
+       0,       // signalCount
+
+ // slots: name, argc, parameters, tag, flags, initial metatype offsets
+       1,    0,  158,    2, 0x08,    1 /* Private */,
+       3,    0,  159,    2, 0x08,    2 /* Private */,
+       4,    0,  160,    2, 0x08,    3 /* Private */,
+       5,    0,  161,    2, 0x08,    4 /* Private */,
+       6,    0,  162,    2, 0x08,    5 /* Private */,
+       7,    0,  163,    2, 0x08,    6 /* Private */,
+       8,    0,  164,    2, 0x08,    7 /* Private */,
+       9,    0,  165,    2, 0x08,    8 /* Private */,
+      10,    0,  166,    2, 0x08,    9 /* Private */,
+      11,    0,  167,    2, 0x08,   10 /* Private */,
+      12,    0,  168,    2, 0x08,   11 /* Private */,
+      13,    0,  169,    2, 0x08,   12 /* Private */,
+      14,    0,  170,    2, 0x08,   13 /* Private */,
+      15,    0,  171,    2, 0x08,   14 /* Private */,
+      16,    0,  172,    2, 0x08,   15 /* Private */,
+      17,    0,  173,    2, 0x08,   16 /* Private */,
+      18,    0,  174,    2, 0x08,   17 /* Private */,
+      19,    0,  175,    2, 0x08,   18 /* Private */,
+      20,    0,  176,    2, 0x08,   19 /* Private */,
+      21,    0,  177,    2, 0x08,   20 /* Private */,
+      22,    0,  178,    2, 0x08,   21 /* Private */,
+      23,    0,  179,    2, 0x08,   22 /* Private */,
+      24,    0,  180,    2, 0x08,   23 /* Private */,
+      25,    0,  181,    2, 0x08,   24 /* Private */,
+
+ // slots: parameters
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+
+       0        // eod
+};
+
+Q_CONSTINIT const QMetaObject MainWindow::staticMetaObject = { {
+    QMetaObject::SuperData::link<QMainWindow::staticMetaObject>(),
+    qt_meta_stringdata_MainWindow.offsetsAndSizes,
+    qt_meta_data_MainWindow,
+    qt_static_metacall,
+    nullptr,
+    qt_incomplete_metaTypeArray<qt_meta_stringdata_MainWindow_t,
+        // Q_OBJECT / Q_GADGET
+        QtPrivate::TypeAndForceComplete<MainWindow, std::true_type>,
+        // method 'onTextChanged'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'toggleWysiwygMode'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'toggleMarkdownMode'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'openFile'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'saveFile'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'saveFileAs'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'newFile'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertBold'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertItalic'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertStrikeThrough'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertHeader1'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertHeader2'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertHeader3'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertBulletList'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertNumberedList'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertBlockquote'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertCode'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertLink'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertImage'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertHorizontalRule'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertTable'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertSpecialCharacter'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertCodeBlock'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'insertTask'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>
+    >,
+    nullptr
+} };
+
+void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        auto *_t = static_cast<MainWindow *>(_o);
+        (void)_t;
+        switch (_id) {
+        case 0: _t->onTextChanged(); break;
+        case 1: _t->toggleWysiwygMode(); break;
+        case 2: _t->toggleMarkdownMode(); break;
+        case 3: _t->openFile(); break;
+        case 4: _t->saveFile(); break;
+        case 5: _t->saveFileAs(); break;
+        case 6: _t->newFile(); break;
+        case 7: _t->insertBold(); break;
+        case 8: _t->insertItalic(); break;
+        case 9: _t->insertStrikeThrough(); break;
+        case 10: _t->insertHeader1(); break;
+        case 11: _t->insertHeader2(); break;
+        case 12: _t->insertHeader3(); break;
+        case 13: _t->insertBulletList(); break;
+        case 14: _t->insertNumberedList(); break;
+        case 15: _t->insertBlockquote(); break;
+        case 16: _t->insertCode(); break;
+        case 17: _t->insertLink(); break;
+        case 18: _t->insertImage(); break;
+        case 19: _t->insertHorizontalRule(); break;
+        case 20: _t->insertTable(); break;
+        case 21: _t->insertSpecialCharacter(); break;
+        case 22: _t->insertCodeBlock(); break;
+        case 23: _t->insertTask(); break;
+        default: ;
+        }
+    }
+    (void)_a;
+}
+
+const QMetaObject *MainWindow::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *MainWindow::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_meta_stringdata_MainWindow.stringdata0))
+        return static_cast<void*>(this);
+    return QMainWindow::qt_metacast(_clname);
+}
+
+int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = QMainWindow::qt_metacall(_c, _id, _a);
+    if (_id < 0)
+        return _id;
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        if (_id < 24)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 24;
+    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        if (_id < 24)
+            *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
+        _id -= 24;
+    }
+    return _id;
+}
+QT_WARNING_POP
+QT_END_MOC_NAMESPACE

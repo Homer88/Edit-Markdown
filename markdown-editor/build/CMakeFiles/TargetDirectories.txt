@@ -1,0 +1,4 @@
+/workspace/markdown-editor/build/CMakeFiles/MarkdownEditor.dir
+/workspace/markdown-editor/build/CMakeFiles/edit_cache.dir
+/workspace/markdown-editor/build/CMakeFiles/rebuild_cache.dir
+/workspace/markdown-editor/build/CMakeFiles/MarkdownEditor_autogen.dir

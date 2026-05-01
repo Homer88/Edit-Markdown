@@ -720,7 +720,28 @@ void MainWindow::createMenuBar()
 void MainWindow::createStatusBar()
 {
     m_statusBar = statusBar();
-    m_statusBar->showMessage("Готов к работе");
+    
+    // Создаем метку для количества строк
+    m_lineCountLabel = new QLabel(this);
+    m_lineCountLabel->setText(tr("Lines: 0"));
+    m_statusBar->addPermanentWidget(m_lineCountLabel);
+    
+    // Создаем метку для кодировки
+    m_encodingLabel = new QLabel(this);
+    m_encodingLabel->setText("UTF-8");
+    m_statusBar->addPermanentWidget(m_encodingLabel);
+    
+    m_statusBar->showMessage(tr("Ready"));
+    
+    // Подключаем обновление счетчика строк
+    connect(m_markdownEditor, &QPlainTextEdit::textChanged, this, [this]() {
+        int lineCount = m_markdownEditor->blockCount();
+        m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+    });
+    
+    // Инициализируем счетчик при создании
+    int lineCount = m_markdownEditor->blockCount();
+    m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
 }
 
 /**
@@ -1046,7 +1067,11 @@ void MainWindow::openFile()
     m_isModified = false;
     updateWindowTitle();
     
-    m_statusBar->showMessage("Файл открыт: " + fileName);
+    // Обновляем счетчик строк после открытия файла
+    int lineCount = m_markdownEditor->blockCount();
+    m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+    
+    m_statusBar->showMessage(tr("File opened: ") + fileName);
 }
 
 /**
@@ -1075,7 +1100,7 @@ void MainWindow::saveFile()
     m_isModified = false;
     updateWindowTitle();
     
-    m_statusBar->showMessage("Файл сохранен: " + m_currentFile);
+    m_statusBar->showMessage(tr("File saved: ") + m_currentFile);
 }
 
 /**
@@ -1129,7 +1154,10 @@ void MainWindow::newFile()
     m_isModified = false;
     updateWindowTitle();
     
-    m_statusBar->showMessage("Новый документ создан");
+    // Сбрасываем счетчик строк для нового документа
+    m_lineCountLabel->setText(tr("Lines: %1").arg(0));
+    
+    m_statusBar->showMessage(tr("New document created"));
 }
 
 /**
@@ -1920,6 +1948,15 @@ void MainWindow::loadTranslations(const QString& language)
 void MainWindow::changeLanguage(const QString& language)
 {
     loadTranslations(language);
+    
+    // Обновляем текст в статусной строке после смены языка
+    if (m_lineCountLabel) {
+        int lineCount = m_markdownEditor->blockCount();
+        m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+    }
+    if (m_statusBar) {
+        m_statusBar->showMessage(tr("Ready"));
+    }
 }
 
 /**
@@ -2013,19 +2050,24 @@ void MainWindow::convertEncoding(const QString& codecName)
         out << content;
         file.close();
         
-        m_statusBar->showMessage(tr("Файл конвертирован в кодировку: ") + codecName);
+        // Обновляем метку кодировки в статусной строке
+        m_encodingLabel->setText(codecName);
+        
+        m_statusBar->showMessage(tr("File converted to encoding: ") + codecName);
         
         // Перечитываем файл чтобы убедиться что всё корректно
         openFile();
     } else {
         // Файл не открыт - просто показываем сообщение что кодировка будет применена при сохранении
-        m_statusBar->showMessage(tr("Кодировка %1 будет применена при сохранении файла").arg(codecName));
+        // Обновляем метку кодировки
+        m_encodingLabel->setText(codecName);
+        m_statusBar->showMessage(tr("Encoding %1 will be applied when saving file").arg(codecName));
         
         // Для нового файла можно сразу перекодировать текст и показать результат
         QString recodedContent = codec->toUnicode(codec->fromUnicode(content));
         if (recodedContent != content) {
-            QMessageBox::information(this, tr("Информация"),
-                tr("Текст был перекодирован в %1. Некоторые символы могли измениться.").arg(codecName));
+            QMessageBox::information(this, tr("Information"),
+                tr("Text was recoded to %1. Some characters may have changed.").arg(codecName));
         }
         m_markdownEditor->setPlainText(recodedContent);
     }

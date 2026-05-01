@@ -329,7 +329,7 @@ private:
     
     // Виджеты редактора
     QTextEdit* m_previewEditor;        ///< Виджет предпросмотра (WYSIWYG)
-    QPlainTextEdit* m_markdownEditor;  ///< Виджет редактора Markdown
+    PlainTextEditWithLineNumbers* m_markdownEditor;  ///< Виджет редактора Markdown с нумерацией строк
     QWidget* m_currentEditor;          ///< Текущий активный редактор
     
     // Парсер Markdown
@@ -340,6 +340,10 @@ private:
     QStatusBar* m_statusBar;           ///< Статусная строка
     QAction* m_wysiwygAction;          ///< Действие переключения в режим WYSIWYG
     QAction* m_markdownAction;         ///< Действие переключения в режим Markdown
+    
+    // Элементы статусной строки
+    QLabel* m_lineCountLabel;          ///< Метка количества строк
+    QLabel* m_encodingLabel;           ///< Метка кодировки
     
     // Состояние приложения
     bool m_isWysiwygMode;              ///< Флаг режима WYSIWYG

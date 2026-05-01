@@ -297,6 +297,26 @@ private slots:
      */
     void convertEncoding(const QString& codecName);
     
+    /**
+     * @brief Переключение тёмной темы
+     */
+    void toggleDarkTheme();
+    
+    /**
+     * @brief Переключение видимости предпросмотра
+     */
+    void togglePreview();
+    
+    /**
+     * @brief Обновление предпросмотра
+     */
+    void updatePreview();
+    
+    /**
+     * @brief Экспорт в PDF
+     */
+    void exportToPdf();
+    
 private:
     /**
      * @brief Инициализация пользовательского интерфейса
@@ -370,6 +390,8 @@ private:
     QStatusBar* m_statusBar;           ///< Статусная строка
     QAction* m_wysiwygAction;          ///< Действие переключения в режим WYSIWYG
     QAction* m_markdownAction;         ///< Действие переключения в режим Markdown
+    QAction* m_darkThemeAction;        ///< Действие переключения тёмной темы
+    QAction* m_previewAction;          ///< Действие включения/выключения предпросмотра
     
     // Элементы статусной строки
     QLabel* m_lineCountLabel;          ///< Метка количества строк
@@ -380,6 +402,8 @@ private:
     QString m_currentFile;             ///< Путь к текущему файлу
     QString m_currentEncoding;         ///< Текущая кодировка файла
     bool m_isModified;                 ///< Флаг изменений в документе
+    bool m_isDarkMode;                 ///< Флаг тёмной темы
+    bool m_isPreviewVisible;           ///< Флаг видимости предпросмотра
     
     // Проверка орфографии
     SpellChecker* m_spellChecker;      ///< Экземпляр проверки орфографии

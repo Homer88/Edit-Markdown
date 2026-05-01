@@ -1,5 +1,5 @@
 ```
-# Compiled and build artifacts
+# Compiled files
 *.o
 *.obj
 *.exe
@@ -8,28 +8,43 @@
 *.a
 *.out
 
-# Dependencies
-venv/
-.venv/
-__pycache__/
-*.egg-info/
-
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-
-# Editors
-.vscode/
-.idea/
+# Qt/MOC generated files
+moc_*.cpp
+moc_*.h
 
 # Build directories
 build/
 dist/
 target/
 
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Logs
+*.log
+
 # Environment
 .env
 .env.local
 *.env.*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# OS files
+.DS_Store
+Thumbs.db
 ```

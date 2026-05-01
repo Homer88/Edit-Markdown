@@ -25,6 +25,7 @@
 #include <QTextStream>
 #include <QPainter>
 #include <QTextBlock>
+#include <QStyleFactory>
 #include "settings.h"
 #include "settings_dialog.h"
 
@@ -118,6 +119,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_statusBar(nullptr)
     , m_wysiwygAction(nullptr)
     , m_markdownAction(nullptr)
+    , m_darkThemeAction(nullptr)
+    , m_previewAction(nullptr)
     , m_isWysiwygMode(false)
     , m_currentFile("")
     , m_currentEncoding("UTF-8")
@@ -125,6 +128,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_spellChecker(nullptr)
     , m_translator(new QTranslator(this))
     , m_currentLanguage("system")
+    , m_isDarkMode(false)
+    , m_isPreviewVisible(true)  // Предпросмотр включен по умолчанию
 {
     // Инициализация проверки орфографии с путями к словарям
     initSpellChecker();
@@ -506,6 +511,20 @@ void MainWindow::createMenuBar()
     m_wysiwygAction->setChecked(m_isWysiwygMode);
     m_wysiwygAction->setActionGroup(menuModeGroup);
     connect(m_wysiwygAction, &QAction::triggered, this, &MainWindow::toggleWysiwygMode);
+    
+    // Действие для предпросмотра (сплит-режим)
+    m_previewAction = viewMenu->addAction(tr("Show Preview"));
+    m_previewAction->setCheckable(true);
+    m_previewAction->setChecked(m_isPreviewVisible);
+    m_previewAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_P));
+    connect(m_previewAction, &QAction::triggered, this, &MainWindow::togglePreview);
+    
+    // Действие для тёмной темы
+    m_darkThemeAction = viewMenu->addAction(tr("Dark Theme"));
+    m_darkThemeAction->setCheckable(true);
+    m_darkThemeAction->setChecked(m_isDarkMode);
+    m_darkThemeAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_D));
+    connect(m_darkThemeAction, &QAction::toggled, this, &MainWindow::toggleDarkTheme);
     
     // Меню Справка
     QMenu* helpMenu = menuBar->addMenu(tr("Help"));
@@ -974,11 +993,9 @@ void MainWindow::onTextChanged()
         updateWindowTitle();
     }
     
-    // Обновляем предпросмотр только если мы в режиме Markdown
-    if (!m_isWysiwygMode) {
-        QString markdownText = m_markdownEditor->toPlainText();
-        QString htmlText = m_parser->parse(markdownText);
-        m_previewEditor->setHtml(htmlText);
+    // Обновляем предпросмотр только если мы в режиме Markdown и видимость предпросмотра включена
+    if (!m_isWysiwygMode && m_isPreviewVisible) {
+        updatePreview();
     }
     
     // Обновляем статусную строку
@@ -2479,4 +2496,154 @@ void MainWindow::onWysiwygTextChanged()
     // Обновляем статус модификации
     m_isModified = true;
     updateWindowTitle();
+}
+
+/**
+ * @brief Переключение тёмной темы
+ */
+void MainWindow::toggleDarkTheme()
+{
+    m_isDarkMode = !m_isDarkMode;
+    m_darkThemeAction->setChecked(m_isDarkMode);
+    
+    if (m_isDarkMode) {
+        // Включаем тёмную тему
+        qApp->setStyle(QStyleFactory::create("Fusion"));
+        
+        QPalette darkPalette;
+        darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::WindowText, Qt::white);
+        darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
+        darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+        darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+        darkPalette.setColor(QPalette::Text, Qt::white);
+        darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::ButtonText, Qt::white);
+        darkPalette.setColor(QPalette::BrightText, Qt::black);
+        darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+
+        qApp->setPalette(darkPalette);
+        qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+        
+        // Применяем тёмные стили к предпросмотру
+        m_previewEditor->setStyleSheet(
+            "QTextEdit { background-color: #2b2b2b; color: #e0e0e0; }"
+        );
+        m_markdownEditor->setStyleSheet(
+            "QPlainTextEdit { background-color: #1e1e1e; color: #d4d4d4; }"
+        );
+    } else {
+        // Выключаем тёмную тему (возвращаем системную)
+        qApp->setPalette(QPalette());
+        qApp->setStyle(QStyleFactory::create(""));
+        qApp->setStyleSheet("");
+        
+        // Возвращаем светлые стили
+        m_previewEditor->setStyleSheet("");
+        m_markdownEditor->setStyleSheet("");
+    }
+    
+    // Обновляем предпросмотр если он видим
+    if (m_isPreviewVisible) {
+        updatePreview();
+    }
+}
+
+/**
+ * @brief Переключение видимости предпросмотра
+ */
+void MainWindow::togglePreview()
+{
+    m_isPreviewVisible = !m_isPreviewVisible;
+    m_previewAction->setChecked(m_isPreviewVisible);
+    
+    // Получаем сплиттер и управляем видимостью панелей
+    QSplitter* splitter = qobject_cast<QSplitter*>(centralWidget()->layout()->itemAt(0)->widget());
+    if (splitter) {
+        if (m_isPreviewVisible) {
+            m_previewEditor->show();
+            // Восстанавливаем размеры 50/50
+            splitter->setSizes(QList<int>() << 600 << 600);
+            updatePreview();
+        } else {
+            m_previewEditor->hide();
+            // Растягиваем редактор на всю ширину
+            splitter->setSizes(QList<int>() << 1200 << 0);
+        }
+    }
+}
+
+/**
+ * @brief Обновление предпросмотра
+ */
+void MainWindow::updatePreview()
+{
+    if (!m_isPreviewVisible) return;
+    
+    QString markdownText = m_markdownEditor->toPlainText();
+    QString htmlContent = m_parser->parse(markdownText);
+    
+    // Формируем полный HTML с базовыми стилями
+    QString fullHtml = R"(
+        <html>
+        <head>
+            <style>
+                body { font-family: sans-serif; padding: 20px; line-height: 1.6; )";
+    
+    if (m_isDarkMode) {
+        fullHtml += "background-color: #2b2b2b; color: #e0e0e0;";
+    } else {
+        fullHtml += "background-color: #ffffff; color: #333333;";
+    }
+    
+    fullHtml += R"( }
+                code { background-color: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
+                pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+                blockquote { border-left: 4px solid #ccc; margin-left: 0; padding-left: 10px; color: #666; }
+                table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+                img { max-width: 100%; height: auto; }
+            </style>
+        </head>
+        <body>)" + htmlContent + R"(
+        </body>
+        </html>
+    )";
+    
+    m_previewEditor->setHtml(fullHtml);
+}
+
+/**
+ * @brief Экспорт в PDF
+ */
+void MainWindow::exportToPdf()
+{
+    QString defaultName = "document.pdf";
+    if (!m_currentFile.isEmpty()) {
+        QFileInfo fi(m_currentFile);
+        defaultName = fi.baseName() + ".pdf";
+    }
+    
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Export to PDF"), defaultName, tr("PDF Files (*.pdf)"));
+    
+    if (fileName.isEmpty()) return;
+    
+    if (!fileName.endsWith(".pdf")) {
+        fileName += ".pdf";
+    }
+    
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(fileName);
+    printer.setPageSize(QPageSize::A4);
+    printer.setPageMargins(QMarginsF(15, 15, 15, 15), QPageLayout::Millimeter);
+    
+    // Используем HTML из предпросмотра для печати
+    m_previewEditor->document()->print(&printer);
+    
+    QMessageBox::information(this, tr("Success"), tr("File saved successfully:\n%1").arg(fileName));
 }

@@ -408,29 +408,56 @@ void MainWindow::createMenuBar()
     helpAction->setShortcut(QKeySequence::HelpContents);
     connect(helpAction, &QAction::triggered, this, &MainWindow::showHelp);
     
-    // Подменю языков
+    // Подменю языков - теперь заполняется динамически
     QMenu* langMenu = helpMenu->addMenu(tr("Language"));
     
-    QAction* sysLangAction = langMenu->addAction(tr("System Default"));
-    sysLangAction->setCheckable(true);
-    sysLangAction->setChecked(m_currentLanguage == "system");
-    connect(sysLangAction, &QAction::triggered, [this]() {
-        changeLanguage("system");
-    });
+    // Динамическое заполнение списка языков на основе файлов в папке translations
+    QString appPath = QCoreApplication::applicationDirPath();
+    QString transPath = QDir(appPath).filePath("translations");
+    QDir dir(transPath);
     
-    QAction* ruLangAction = langMenu->addAction(tr("Russian"));
-    ruLangAction->setCheckable(true);
-    ruLangAction->setChecked(m_currentLanguage == "ru");
-    connect(ruLangAction, &QAction::triggered, [this]() {
-        changeLanguage("ru");
-    });
+    // Множество для хранения уникальных кодов языков
+    QSet<QString> languages;
+    languages.insert("system"); // Всегда добавляем системный
     
-    QAction* enLangAction = langMenu->addAction(tr("English"));
-    enLangAction->setCheckable(true);
-    enLangAction->setChecked(m_currentLanguage == "en");
-    connect(enLangAction, &QAction::triggered, [this]() {
-        changeLanguage("en");
-    });
+    if (dir.exists()) {
+        QStringList filters;
+        filters << "*.qm";
+        dir.setNameFilters(filters);
+        QStringList files = dir.entryList();
+        
+        for (const QString &file : files) {
+            QString baseName = QFileInfo(file).completeBaseName();
+            QString langCode = baseName;
+            
+            // Логика извлечения кода языка из имени файла
+            if (baseName.contains('_')) {
+                int lastUnderscore = baseName.lastIndexOf('_');
+                QString potentialLang = baseName.mid(lastUnderscore + 1);
+                if (potentialLang.length() >= 2 && potentialLang.length() <= 5) {
+                    langCode = potentialLang;
+                }
+            }
+            
+            languages.insert(langCode);
+        }
+    }
+    
+    // Преобразуем в список и сортируем
+    QList<QString> sortedLangs = languages.values();
+    std::sort(sortedLangs.begin(), sortedLangs.end());
+    
+    // Создаем действия для каждого языка
+    for (const QString &lang : sortedLangs) {
+        QAction *langAction = langMenu->addAction(lang.toUpper());
+        langAction->setCheckable(true);
+        langAction->setChecked(m_currentLanguage == lang);
+        
+        // Используем замыкание для передачи кода языка
+        connect(langAction, &QAction::triggered, [this, lang]() {
+            changeLanguage(lang);
+        });
+    }
     
     // Меню Кодировка
     QMenu* encodingMenu = menuBar->addMenu(tr("Encoding"));
@@ -1574,11 +1601,41 @@ void MainWindow::loadTranslations(const QString& language)
     // Удаляем предыдущий переводчик
     qApp->removeTranslator(m_translator);
     
-    // Формируем путь к файлу перевода
-    QString translationFile = ":/translations/editor_" + langToLoad + ".qm";
+    // Путь к папке с переводами рядом с исполняемым файлом
+    QString appPath = QCoreApplication::applicationDirPath();
+    QString transPath = QDir(appPath).filePath("translations");
     
-    // Пытаемся загрузить перевод из ресурсов
-    if (m_translator->load(translationFile)) {
+    // Формируем возможные имена файлов перевода
+    QStringList possibleFiles;
+    possibleFiles << ("editor_" + langToLoad + ".qm")
+                  << ("markdown_editor_" + langToLoad + ".qm")
+                  << (langToLoad + ".qm");
+    
+    bool loaded = false;
+    
+    // Пытаемся загрузить из папки translations рядом с приложением
+    for (const QString &fileName : possibleFiles) {
+        QString filePath = transPath + "/" + fileName;
+        if (QFile::exists(filePath)) {
+            if (m_translator->load(filePath)) {
+                loaded = true;
+                break;
+            }
+        }
+    }
+    
+    // Если не нашли, пробуем загрузить из ресурсов
+    if (!loaded) {
+        for (const QString &fileName : possibleFiles) {
+            QString resourcePath = ":/translations/" + fileName;
+            if (m_translator->load(resourcePath)) {
+                loaded = true;
+                break;
+            }
+        }
+    }
+    
+    if (loaded) {
         qApp->installTranslator(m_translator);
         m_currentLanguage = language;
         
@@ -1587,17 +1644,12 @@ void MainWindow::loadTranslations(const QString& language)
         createToolBar();
         updateWindowTitle();
     } else {
-        // Если файл не найден в ресурсах, пробуем загрузить из папки translations
-        QString localPath = QApplication::applicationDirPath() + "/../translations/editor_" + langToLoad + ".qm";
-        if (QFile::exists(localPath)) {
-            if (m_translator->load(localPath)) {
-                qApp->installTranslator(m_translator);
-                m_currentLanguage = language;
-                createMenuBar();
-                createToolBar();
-                updateWindowTitle();
-            }
-        }
+        qDebug() << "Warning: Translation file for" << language << "not found.";
+        m_currentLanguage = language;
+        // Всё равно обновляем меню, чтобы отразить выбор пользователя
+        createMenuBar();
+        createToolBar();
+        updateWindowTitle();
     }
 }
 

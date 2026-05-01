@@ -79,3 +79,22 @@ else()
         COMMENT "Copying all dictionary files to application/dictionaries folder"
     )
 endif()
+
+# Копируем файлы переводов (*.qm) в папку application/translations рядом с исполняемым файлом
+file(GLOB TRANSLATION_FILES "${CMAKE_SOURCE_DIR}/translations/*.qm")
+if(TRANSLATION_FILES)
+    if(WIN32)
+        add_custom_command(TARGET markdown-editor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:markdown-editor>/translations"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TRANSLATION_FILES} "$<TARGET_FILE_DIR:markdown-editor>/translations/"
+            COMMENT "Copying all translation files to application/translations folder"
+        )
+    else()
+        # Для Linux/macOS также копируем в папку translations
+        add_custom_command(TARGET markdown-editor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:markdown-editor>/translations"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TRANSLATION_FILES} "$<TARGET_FILE_DIR:markdown-editor>/translations/"
+            COMMENT "Copying all translation files to application/translations folder"
+        )
+    endif()
+endif()

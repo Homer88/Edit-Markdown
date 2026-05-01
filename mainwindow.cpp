@@ -272,17 +272,24 @@ void MainWindow::createToolBar()
     
     m_toolBar->addSeparator();
     
+    // Группа действий для переключателей режимов (взаимоисключающие)
+    QActionGroup* modeGroup = new QActionGroup(this);
+    modeGroup->setExclusive(true);
+    
     // Переключатели режимов
     m_wysiwygAction = m_toolBar->addAction("WYSIWYG");
     m_wysiwygAction->setToolTip("Режим визуального редактирования");
     m_wysiwygAction->setCheckable(true);
-    connect(m_wysiwygAction, &QAction::triggered, this, &MainWindow::toggleWysiwygMode);
+    m_wysiwygAction->setChecked(m_isWysiwygMode);
+    m_wysiwygAction->setActionGroup(modeGroup);
+    connect(m_wysiwygAction, &QAction::toggled, this, &MainWindow::toggleWysiwygMode);
     
     m_markdownAction = m_toolBar->addAction("Markdown");
     m_markdownAction->setToolTip("Режим редактирования Markdown");
     m_markdownAction->setCheckable(true);
-    m_markdownAction->setChecked(true);
-    connect(m_markdownAction, &QAction::triggered, this, &MainWindow::toggleMarkdownMode);
+    m_markdownAction->setChecked(!m_isWysiwygMode);
+    m_markdownAction->setActionGroup(modeGroup);
+    connect(m_markdownAction, &QAction::toggled, this, &MainWindow::toggleMarkdownMode);
 }
 
 /**
@@ -398,14 +405,22 @@ void MainWindow::createMenuBar()
     // Меню Вид
     QMenu* viewMenu = menuBar->addMenu(tr("View"));
     
+    // Группа действий для переключателей режимов в меню (взаимоисключающие)
+    QActionGroup* menuModeGroup = new QActionGroup(this);
+    menuModeGroup->setExclusive(true);
+    
     m_markdownAction = viewMenu->addAction(tr("Markdown Mode"));
     m_markdownAction->setCheckable(true);
     m_markdownAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_1));
+    m_markdownAction->setChecked(!m_isWysiwygMode);
+    m_markdownAction->setActionGroup(menuModeGroup);
     connect(m_markdownAction, &QAction::triggered, this, &MainWindow::toggleMarkdownMode);
     
     m_wysiwygAction = viewMenu->addAction(tr("Preview Mode"));
     m_wysiwygAction->setCheckable(true);
     m_wysiwygAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_2));
+    m_wysiwygAction->setChecked(m_isWysiwygMode);
+    m_wysiwygAction->setActionGroup(menuModeGroup);
     connect(m_wysiwygAction, &QAction::triggered, this, &MainWindow::toggleWysiwygMode);
     
     // Меню Справка
@@ -853,8 +868,7 @@ void MainWindow::onTextChanged()
 void MainWindow::toggleWysiwygMode()
 {
     if (m_isWysiwygMode) {
-        // Если уже в режиме WYSIWYG, переключаемся обратно в Markdown
-        toggleMarkdownMode();
+        // Уже в режиме WYSIWYG, ничего не делаем (QActionGroup уже обработал переключение)
         return;
     }
     
@@ -884,6 +898,7 @@ void MainWindow::toggleWysiwygMode()
 void MainWindow::toggleMarkdownMode()
 {
     if (!m_isWysiwygMode) {
+        // Уже в режиме Markdown, ничего не делаем (QActionGroup уже обработал переключение)
         return;
     }
     

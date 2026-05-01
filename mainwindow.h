@@ -6,6 +6,7 @@
 #include <QPlainTextEdit>
 #include <QToolBar>
 #include <QAction>
+#include <QActionGroup>
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QSplitter>

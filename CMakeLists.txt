@@ -26,15 +26,16 @@ set(PROJECT_SOURCES
 )
 
 # --- Сборка Hunspell из исходников ---
-# Добавляем подпроект Hunspell перед основным проектом
-add_subdirectory(hunspell)
+# Добавляем подпроект Hunspell (исходники лежат в hunspell/hunspell)
+add_subdirectory(hunspell/hunspell)
 
 # Создаем исполняемый файл
 add_executable(markdown-editor ${PROJECT_SOURCES})
 
-# Подключаем заголовочные файлы проекта
+# Подключаем заголовочные файлы проекта и Hunspell
 target_include_directories(markdown-editor PRIVATE 
     ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/hunspell/hunspell
 )
 
 # Линкуем библиотеки

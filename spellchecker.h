@@ -5,7 +5,7 @@
 #include <QStringList>
 #include <QList>
 #include <QPoint>
-#include "hunspell/hunspell.hxx"
+#include "hunspell.hxx"
 
 /**
  * @class SpellChecker

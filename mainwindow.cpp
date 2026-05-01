@@ -3092,23 +3092,22 @@ void MainWindow::updatePreview()
     QString markdownText = m_markdownEditor->toPlainText();
     
     // Обработка переносов строк для корректного отображения в Markdown
-    // Разбиваем текст на строки и обрабатываем их
-    QStringList lines = markdownText.split('\n');
-    QStringList processedLines;
+    // Заменяем одиночные переносы строк на <br>, сохраняя двойные как разделители абзацев
+    QStringList paragraphs = markdownText.split("\n\n");
+    QStringList processedParagraphs;
     
-    for (int i = 0; i < lines.size(); ++i) {
-        QString line = lines[i];
-        
-        // Если это не пустая строка и следующая строка тоже не пустая - добавляем два пробела в конец
-        // Это создаст жесткий перенос строки в Markdown
-        if (!line.trimmed().isEmpty() && i < lines.size() - 1 && !lines[i + 1].trimmed().isEmpty()) {
-            processedLines << (line + "  ");
+    for (const QString &paragraph : paragraphs) {
+        QString processed = paragraph.trimmed();
+        if (!processed.isEmpty()) {
+            // Заменяем одиночные переносы на <br>
+            processed.replace("\n", "<br>");
+            processedParagraphs << processed;
         } else {
-            processedLines << line;
+            processedParagraphs << "";
         }
     }
     
-    markdownText = processedLines.join('\n');
+    markdownText = processedParagraphs.join("\n\n");
     
     QString htmlContent = m_parser->parse(markdownText);
     

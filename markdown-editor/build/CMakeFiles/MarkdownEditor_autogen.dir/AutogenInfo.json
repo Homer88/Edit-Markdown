@@ -185,6 +185,12 @@
 	"HEADERS" : 
 	[
 		[
+			"/workspace/markdown-editor/helpwindow.h",
+			"MU",
+			"EWIEGA46WW/moc_helpwindow.cpp",
+			null
+		],
+		[
 			"/workspace/markdown-editor/mainwindow.h",
 			"MU",
 			"EWIEGA46WW/moc_mainwindow.cpp",
@@ -261,6 +267,7 @@
 	"SETTINGS_FILE" : "/workspace/markdown-editor/build/CMakeFiles/MarkdownEditor_autogen.dir/AutogenUsed.txt",
 	"SOURCES" : 
 	[
+		[ "/workspace/markdown-editor/helpwindow.cpp", "MU", null ],
 		[ "/workspace/markdown-editor/main.cpp", "MU", null ],
 		[ "/workspace/markdown-editor/mainwindow.cpp", "MU", null ],
 		[ "/workspace/markdown-editor/markdownparser.cpp", "MU", null ],

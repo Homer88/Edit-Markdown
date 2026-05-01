@@ -18,6 +18,8 @@ qt_add_executable(MarkdownEditor
     markdownparser.cpp
     spellchecker.h
     spellchecker.cpp
+    helpwindow.h
+    helpwindow.cpp
 )
 
 target_link_libraries(MarkdownEditor PRIVATE

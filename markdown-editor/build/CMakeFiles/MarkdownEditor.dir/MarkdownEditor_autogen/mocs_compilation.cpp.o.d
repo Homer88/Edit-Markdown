@@ -1,7 +1,7 @@
 CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.o: \
  /workspace/markdown-editor/build/MarkdownEditor_autogen/mocs_compilation.cpp \
  /usr/include/stdc-predef.h \
- /workspace/markdown-editor/build/MarkdownEditor_autogen/EWIEGA46WW/moc_mainwindow.cpp \
+ /workspace/markdown-editor/build/MarkdownEditor_autogen/EWIEGA46WW/moc_helpwindow.cpp \
  /usr/include/c++/12/memory /usr/include/c++/12/bits/stl_algobase.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h \
@@ -114,9 +114,9 @@ CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.o: \
  /usr/include/c++/12/backward/auto_ptr.h \
  /usr/include/c++/12/pstl/glue_memory_defs.h \
  /usr/include/c++/12/pstl/execution_defs.h \
- /workspace/markdown-editor/build/MarkdownEditor_autogen/EWIEGA46WW/../../../mainwindow.h \
- /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMainWindow \
- /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h \
+ /workspace/markdown-editor/build/MarkdownEditor_autogen/EWIEGA46WW/../../../helpwindow.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialog \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdialog.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsglobal.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qtguiglobal.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qglobal.h \
@@ -336,8 +336,8 @@ CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qsizepolicy.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qcursor.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qbitmap.h \
- /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabwidget.h \
- /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QTextEdit \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QTextBrowser \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtextbrowser.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtextedit.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractscrollarea.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qframe.h \
@@ -347,9 +347,24 @@ CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qtextcursor.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qtextformat.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qpen.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qpushbutton.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QVBoxLayout \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qboxlayout.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayout.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayoutitem.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qboxlayout.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgridlayout.h \
+ /workspace/markdown-editor/build/MarkdownEditor_autogen/EWIEGA46WW/moc_mainwindow.cpp \
+ /workspace/markdown-editor/build/MarkdownEditor_autogen/EWIEGA46WW/../../../mainwindow.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMainWindow \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabwidget.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QTextEdit \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtextedit.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPlainTextEdit \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qplaintextedit.h \
- /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtextedit.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qabstracttextdocumentlayout.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qtextlayout.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qevent.h \
@@ -400,4 +415,5 @@ CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qpoint.h \
  /usr/include/hunspell/hunspell.hxx /usr/include/hunspell/hunvisapi.h \
- /usr/include/hunspell/w_char.hxx /usr/include/hunspell/atypes.hxx
+ /usr/include/hunspell/w_char.hxx /usr/include/hunspell/atypes.hxx \
+ /workspace/markdown-editor/build/MarkdownEditor_autogen/EWIEGA46WW/../../../helpwindow.h

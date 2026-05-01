@@ -311,6 +311,30 @@ void MainWindow::createMenuBar()
     QAction* spellCheckAction = editMenu->addAction("Проверить орфографию");
     spellCheckAction->setShortcut(QKeySequence(Qt::Key_F7));
     connect(spellCheckAction, &QAction::triggered, this, &MainWindow::checkSpelling);
+    
+    // Меню Справка
+    QMenu* helpMenu = menuBar->addMenu("Справка");
+    
+    QAction* helpAction = helpMenu->addAction("Справка...");
+    helpAction->setShortcut(QKeySequence::HelpContents);
+    connect(helpAction, &QAction::triggered, this, &MainWindow::showHelp);
+    
+    QAction* aboutAction = helpMenu->addAction("О программе...");
+    connect(aboutAction, &QAction::triggered, this, [this]() {
+        QMessageBox::about(this, "О программе",
+            "<h2>Markdown Editor</h2>"
+            "<p>Версия 1.0</p>"
+            "<p>Редактор Markdown с поддержкой WYSIWYG режима.</p>"
+            "<p><b>Возможности:</b></p>"
+            "<ul>"
+            "<li>Двухрежимное редактирование (Markdown/WYSIWYG)</li>"
+            "<li>Проверка орфографии (русский/английский)</li>"
+            "<li>Работа с таблицами</li>"
+            "<li>Вставка изображений и ссылок</li>"
+            "<li>Подсветка кода</li>"
+            "</ul>"
+            "<p>Создано с использованием Qt6 и C++</p>");
+    });
 }
 
 /**
@@ -1136,4 +1160,13 @@ void MainWindow::showSpellingContextMenu(int position, const QString& word)
     
     // Показываем меню
     menu.exec(QCursor::pos());
+}
+
+/**
+ * @brief Открытие окна справки
+ */
+void MainWindow::showHelp()
+{
+    HelpWindow* helpWindow = new HelpWindow(this);
+    helpWindow->exec();
 }

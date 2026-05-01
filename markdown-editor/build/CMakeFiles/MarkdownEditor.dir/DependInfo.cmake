@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/workspace/markdown-editor/build/MarkdownEditor_autogen/mocs_compilation.cpp" "CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.o" "gcc" "CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.o.d"
+  "/workspace/markdown-editor/helpwindow.cpp" "CMakeFiles/MarkdownEditor.dir/helpwindow.cpp.o" "gcc" "CMakeFiles/MarkdownEditor.dir/helpwindow.cpp.o.d"
   "/workspace/markdown-editor/main.cpp" "CMakeFiles/MarkdownEditor.dir/main.cpp.o" "gcc" "CMakeFiles/MarkdownEditor.dir/main.cpp.o.d"
   "/workspace/markdown-editor/mainwindow.cpp" "CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o" "gcc" "CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o.d"
   "/workspace/markdown-editor/markdownparser.cpp" "CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o" "gcc" "CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o.d"

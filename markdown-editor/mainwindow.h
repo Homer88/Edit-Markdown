@@ -11,6 +11,7 @@
 #include <QSplitter>
 #include "markdownparser.h"
 #include "spellchecker.h"
+#include "helpwindow.h"
 
 /**
  * @class MainWindow
@@ -191,6 +192,11 @@ private slots:
      * @param word Слово с ошибкой
      */
     void showSpellingContextMenu(int position, const QString& word);
+    
+    /**
+     * @brief Открытие окна справки
+     */
+    void showHelp();
     
 private:
     /**

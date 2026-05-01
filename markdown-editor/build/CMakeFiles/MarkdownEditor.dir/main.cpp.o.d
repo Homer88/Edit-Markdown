@@ -405,4 +405,18 @@ CMakeFiles/MarkdownEditor.dir/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qpoint.h \
  /usr/include/hunspell/hunspell.hxx /usr/include/hunspell/hunvisapi.h \
- /usr/include/hunspell/w_char.hxx /usr/include/hunspell/atypes.hxx
+ /usr/include/hunspell/w_char.hxx /usr/include/hunspell/atypes.hxx \
+ /workspace/markdown-editor/helpwindow.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialog \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdialog.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QTextBrowser \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtextbrowser.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qpushbutton.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QVBoxLayout \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qboxlayout.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayout.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayoutitem.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qboxlayout.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgridlayout.h

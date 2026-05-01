@@ -4,6 +4,8 @@ file(REMOVE_RECURSE
   "MarkdownEditor_autogen"
   "CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.o"
   "CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.o.d"
+  "CMakeFiles/MarkdownEditor.dir/helpwindow.cpp.o"
+  "CMakeFiles/MarkdownEditor.dir/helpwindow.cpp.o.d"
   "CMakeFiles/MarkdownEditor.dir/main.cpp.o"
   "CMakeFiles/MarkdownEditor.dir/main.cpp.o.d"
   "CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o"

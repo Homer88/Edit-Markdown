@@ -424,23 +424,35 @@
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qvector2d.h \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qvectornd.h \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qwindowdefs.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialog \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMainWindow \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMenuBar \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPlainTextEdit \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QSplitter \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QStatusBar \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QTextBrowser \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QTextEdit \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QToolBar \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QVBoxLayout \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractscrollarea.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qboxlayout.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdialog.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qframe.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgridlayout.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayout.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayoutitem.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmenu.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmenubar.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qplaintextedit.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qpushbutton.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qsizepolicy.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qsplitter.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qstatusbar.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabwidget.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtextbrowser.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtextedit.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtoolbar.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgets-config.h \
@@ -454,5 +466,6 @@
   /usr/lib/gcc/x86_64-linux-gnu/12/include/stdarg.h \
   /usr/lib/gcc/x86_64-linux-gnu/12/include/stdbool.h \
   /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
+  /workspace/markdown-editor/helpwindow.h \
   /workspace/markdown-editor/markdownparser.h \
   /workspace/markdown-editor/spellchecker.h

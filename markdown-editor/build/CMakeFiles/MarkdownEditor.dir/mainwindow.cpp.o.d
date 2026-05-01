@@ -397,6 +397,14 @@ CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qpoint.h \
  /usr/include/hunspell/hunspell.hxx /usr/include/hunspell/hunvisapi.h \
  /usr/include/hunspell/w_char.hxx /usr/include/hunspell/atypes.hxx \
+ /workspace/markdown-editor/helpwindow.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialog \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdialog.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QTextBrowser \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtextbrowser.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qpushbutton.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QVBoxLayout \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qboxlayout.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayout.h \
@@ -443,14 +451,9 @@ CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qfontdatabase.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QCloseEvent \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qevent.h \
- /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialog \
- /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdialog.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QLabel \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlabel.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qpicture.h \
- /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \
- /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qpushbutton.h \
- /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGridLayout \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgridlayout.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QInputDialog \

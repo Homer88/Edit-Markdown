@@ -166,6 +166,30 @@ MarkdownEditor_autogen/mocs_compilation.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MarkdownEditor.dir/build.make CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.s
 .PHONY : MarkdownEditor_autogen/mocs_compilation.cpp.s
 
+helpwindow.o: helpwindow.cpp.o
+.PHONY : helpwindow.o
+
+# target to build an object file
+helpwindow.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MarkdownEditor.dir/build.make CMakeFiles/MarkdownEditor.dir/helpwindow.cpp.o
+.PHONY : helpwindow.cpp.o
+
+helpwindow.i: helpwindow.cpp.i
+.PHONY : helpwindow.i
+
+# target to preprocess a source file
+helpwindow.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MarkdownEditor.dir/build.make CMakeFiles/MarkdownEditor.dir/helpwindow.cpp.i
+.PHONY : helpwindow.cpp.i
+
+helpwindow.s: helpwindow.cpp.s
+.PHONY : helpwindow.s
+
+# target to generate assembly for a file
+helpwindow.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MarkdownEditor.dir/build.make CMakeFiles/MarkdownEditor.dir/helpwindow.cpp.s
+.PHONY : helpwindow.cpp.s
+
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -275,6 +299,9 @@ help:
 	@echo "... MarkdownEditor_autogen/mocs_compilation.o"
 	@echo "... MarkdownEditor_autogen/mocs_compilation.i"
 	@echo "... MarkdownEditor_autogen/mocs_compilation.s"
+	@echo "... helpwindow.o"
+	@echo "... helpwindow.i"
+	@echo "... helpwindow.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

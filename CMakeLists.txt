@@ -22,12 +22,16 @@ set(PROJECT_SOURCES
     markdownparser.h
     spellchecker.cpp
     spellchecker.h
+    settings.cpp
+    settings.h
+    settings_dialog.cpp
+    settings_dialog.h
     resources.qrc
 )
 
 # --- Сборка Hunspell из исходников ---
 # Добавляем подпроект Hunspell (исходники лежат в hunspell/hunspell)
-add_subdirectory(hunspell/hunspell)
+add_subdirectory(hunspell)
 
 # Создаем исполняемый файл и указываем выходную папку
 add_executable(markdown-editor ${PROJECT_SOURCES})

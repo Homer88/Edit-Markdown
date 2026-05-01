@@ -1,31 +1,83 @@
 ```
-# Build artifacts
-build/
+# Compiled and build artifacts
 *.o
 *.obj
+*.a
+*.so
+*.dll
+*.exe
 *.out
-*CMakeCache.txt
-*CMakeFiles/
-*CMakeOutput.log
-*cmake.check_cache
+build/
+dist/
 
 # Dependencies
 node_modules/
-.venv/
 venv/
+.venv/
 __pycache__/
+*.egg-info/
+.Python
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-
-# Editors
-.vscode/
-.idea/
+*.swo
 
 # Environment
 .env
 .env.local
 *.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# MyPy
+.mypy_cache/
+
+# PyTest
+.pytest_cache/
+
+# Gradle
+.gradle/
+build/
+
+# Target (Rust, etc.)
+target/
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

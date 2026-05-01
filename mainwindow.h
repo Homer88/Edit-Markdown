@@ -15,6 +15,7 @@
 #include "markdownparser.h"
 #include "spellchecker.h"
 #include "helpwindow.h"
+#include "settings_dialog.h"
 
 /**
  * @class LineNumberArea
@@ -256,6 +257,11 @@ private slots:
     void showHelp();
     
     /**
+     * @brief Открытие диалога основных настроек
+     */
+    void showSettings();
+    
+    /**
      * @brief Изменение языка интерфейса
      * @param language Код языка ("ru", "en", "system")
      */
@@ -292,6 +298,11 @@ private:
      * @brief Создание статусной строки
      */
     void createStatusBar();
+    
+    /**
+     * @brief Обновление информации в статусной строке
+     */
+    void updateStatusBarInfo();
     
     /**
      * @brief Применение стилей к предпросмотру

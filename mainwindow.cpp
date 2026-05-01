@@ -25,6 +25,8 @@
 #include <QTextStream>
 #include <QPainter>
 #include <QTextBlock>
+#include "settings.h"
+#include "settings_dialog.h"
 
 // Реализация LineNumberArea
 LineNumberArea::LineNumberArea(QPlainTextEdit *editor)
@@ -504,6 +506,12 @@ void MainWindow::createMenuBar()
     helpAction->setShortcut(QKeySequence::HelpContents);
     connect(helpAction, &QAction::triggered, this, &MainWindow::showHelp);
     
+    // Меню Настройки
+    QMenu* settingsMenu = menuBar->addMenu(tr("Settings"));
+    
+    QAction* settingsAction = settingsMenu->addAction(tr("Basic Settings..."));
+    connect(settingsAction, &QAction::triggered, this, &MainWindow::showSettings);
+    
     // Подменю языков - теперь заполняется динамически
     QMenu* langMenu = helpMenu->addMenu(tr("Language"));
     
@@ -742,6 +750,20 @@ void MainWindow::createStatusBar()
     // Инициализируем счетчик при создании
     int lineCount = m_markdownEditor->blockCount();
     m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+}
+
+/**
+ * @brief Обновление информации в статусной строке
+ */
+void MainWindow::updateStatusBarInfo()
+{
+    // Обновляем количество строк
+    int lineCount = m_markdownEditor->blockCount();
+    m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+    
+    // Обновляем кодировку из настроек
+    const auto& settings = Settings::instance();
+    m_encodingLabel->setText(settings.defaultEncoding());
 }
 
 /**
@@ -1813,6 +1835,29 @@ void MainWindow::showHelp()
 {
     HelpWindow* helpWindow = new HelpWindow(this);
     helpWindow->exec();
+}
+
+/**
+ * @brief Открытие диалога основных настроек
+ */
+void MainWindow::showSettings()
+{
+    SettingsDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        // Применяем новый размер шрифта
+        QFont font = m_markdownEditor->font();
+        font.setPointSize(dialog.fontSize());
+        m_markdownEditor->setFont(font);
+        m_previewEditor->setFont(font);
+        
+        // Если язык изменился, перезагружаем интерфейс
+        if (dialog.language() != m_currentLanguage) {
+            changeLanguage(dialog.language());
+        }
+        
+        // Обновляем статус-бар с новой кодировкой по умолчанию
+        updateStatusBarInfo();
+    }
 }
 
 /**

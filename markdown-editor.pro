@@ -36,13 +36,17 @@ SOURCES += main.cpp \
            mainwindow.cpp \
            markdownparser.cpp \
            spellchecker.cpp \
-           helpwindow.cpp
+           helpwindow.cpp \
+           settings.cpp \
+           settings_dialog.cpp
 
 # Заголовочные файлы
 HEADERS += mainwindow.h \
            markdownparser.h \
            spellchecker.h \
-           helpwindow.h
+           helpwindow.h \
+           settings.h \
+           settings_dialog.h
 
 # Файлы переводов
 TRANSLATIONS += translations/editor_ru.ts \

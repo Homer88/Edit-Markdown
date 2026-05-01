@@ -32,6 +32,20 @@ if(WIN32)
     target_compile_definitions(hunspell PUBLIC HUNSPELL_STATIC)
     # Отключаем спецификаторы dllexport/dllimport для статической библиотеки
     target_compile_definitions(hunspell PRIVATE -DHUNSPELL_STATIC)
+    # При статической сборке обязательно определяем HUNSPELL_STATIC
+       # Это должно отключить __declspec(dllimport/dllexport) в заголовках Hunspell
+       #target_compile_definitions(hunspell PUBLIC HUNSPELL_STATIC)
+
+       # Дополнительно убеждаемся, что макрос определен и приватно для компиляции самой библиотеки
+       #target_compile_definitions(hunspell PRIVATE HUNSPELL_STATIC)
+
+       # Отключаем спецификаторы dllexport/dllimport для статической библиотеки
+       # Явно определяем, что это статическая сборка
+       target_compile_definitions(hunspell PRIVATE -DHUNSPELL_STATIC)
+
+       # Макрос BUILDING_LIBHUNSPELL нужен для корректной компиляции библиотеки
+       # Без него hunvisapi.h будет использовать __declspec(dllimport) даже при сборке самой библиотеки
+       target_compile_definitions(hunspell PRIVATE BUILDING_LIBHUNSPELL)
 endif()
 
 # Установка заголовков (опционально)

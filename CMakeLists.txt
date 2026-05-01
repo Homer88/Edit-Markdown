@@ -11,6 +11,7 @@ set(CMAKE_AUTOUIC ON)
 if(WIN32)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS NOMINMAX UNICODE _UNICODE)
     set(CMAKE_WIN32_EXECUTABLE ON)
+
 endif()
 
 # Найти Qt5 или Qt6

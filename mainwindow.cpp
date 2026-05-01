@@ -529,19 +529,155 @@ void MainWindow::createMenuBar()
     m_darkThemeAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_D));
     connect(m_darkThemeAction, &QAction::toggled, this, &MainWindow::toggleDarkTheme);
     
-    // Меню Справка
-    QMenu* helpMenu = menuBar->addMenu(tr("Help"));
-    
-    QAction* helpAction = helpMenu->addAction(tr("Help..."));
-    helpAction->setShortcut(QKeySequence::HelpContents);
-    connect(helpAction, &QAction::triggered, this, &MainWindow::showHelp);
-    
+
     // Меню Настройки
     QMenu* settingsMenu = menuBar->addMenu(tr("Settings"));
     
     QAction* settingsAction = settingsMenu->addAction(tr("Basic Settings..."));
     connect(settingsAction, &QAction::triggered, this, &MainWindow::showSettings);
-    
+    // Меню Кодировка
+    QMenu* encodingMenu = menuBar->addMenu(tr("Encoding"));
+
+    // Автоопределение кодировки - работает даже без сохранения файла
+    QAction* autoDetectAction = encodingMenu->addAction(tr("Auto Detect"));
+    autoDetectAction->setToolTip(tr("Автоматически определить кодировку текста в редакторе"));
+    connect(autoDetectAction, &QAction::triggered, [this]() {
+        QString content = m_markdownEditor->toPlainText();
+
+        // Пробуем определить кодировку путем перебора популярных кодировок
+        QList<QByteArray> codecNames = {
+            "UTF-8", "Windows-1251", "KOI8-R", "CP866", "ISO 8859-5",
+            "UTF-16", "UTF-32", "Windows-1252", "ISO 8859-1"
+        };
+
+        QString detectedCodec = "UTF-8"; // По умолчанию
+        int bestScore = 0;
+
+        for (const QByteArray& codecName : codecNames) {
+            QTextCodec* codec = QTextCodec::codecForName(codecName);
+            if (!codec) continue;
+
+            // Кодируем и декодируем текст
+            QByteArray encoded = codec->fromUnicode(content);
+            QString decoded = codec->toUnicode(encoded);
+
+            // Считаем сколько символов совпало
+            int score = 0;
+            for (int i = 0; i < qMin(content.length(), decoded.length()); i++) {
+                if (content[i] == decoded[i]) score++;
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                detectedCodec = codecName;
+            }
+        }
+
+        m_statusBar->showMessage(tr("Предполагаемая кодировка: ") + detectedCodec);
+
+        // Показываем информацию в диалоге
+        QMessageBox::information(this, tr("Автоопределение кодировки"),
+            tr("Наиболее вероятная кодировка: %1\n\n"
+               "Текст содержит %2 символов.\n"
+               "Для изменения кодировки используйте меню Encoding.")
+            .arg(detectedCodec).arg(content.length()));
+    });
+
+    encodingMenu->addSeparator();
+
+    // Популярные кодировки
+    QAction* utf8Action = encodingMenu->addAction("UTF-8");
+    utf8Action->setToolTip(tr("Конвертировать в UTF-8"));
+    connect(utf8Action, &QAction::triggered, [this]() {
+        convertEncoding("UTF-8");
+    });
+
+    QAction* utf8BomAction = encodingMenu->addAction("UTF-8 with BOM");
+    utf8BomAction->setToolTip(tr("Конвертировать в UTF-8 с BOM"));
+    connect(utf8BomAction, &QAction::triggered, [this]() {
+        convertEncoding("UTF-8");
+    });
+
+    QAction* asciiAction = encodingMenu->addAction("ASCII");
+    asciiAction->setToolTip(tr("Конвертировать в ASCII"));
+    connect(asciiAction, &QAction::triggered, [this]() {
+        convertEncoding("ASCII");
+    });
+
+    encodingMenu->addSeparator();
+
+    // Кириллические кодировки
+    QMenu* cyrillicMenu = encodingMenu->addMenu(tr("Cyrillic"));
+
+    QAction* win1251Action = cyrillicMenu->addAction("Windows-1251");
+    connect(win1251Action, &QAction::triggered, [this]() {
+        convertEncoding("Windows-1251");
+    });
+
+    QAction* koi8rAction = cyrillicMenu->addAction("KOI8-R");
+    connect(koi8rAction, &QAction::triggered, [this]() {
+        convertEncoding("KOI8-R");
+    });
+
+    QAction* cp866Action = cyrillicMenu->addAction("CP866");
+    connect(cp866Action, &QAction::triggered, [this]() {
+        convertEncoding("CP866");
+    });
+
+    QAction* iso88595Action = cyrillicMenu->addAction("ISO 8859-5");
+    connect(iso88595Action, &QAction::triggered, [this]() {
+        convertEncoding("ISO 8859-5");
+    });
+
+    encodingMenu->addSeparator();
+
+    // Другие популярные кодировки
+    QMenu* otherMenu = encodingMenu->addMenu(tr("Other"));
+
+    QAction* latin1Action = otherMenu->addAction("ISO 8859-1 (Latin-1)");
+    connect(latin1Action, &QAction::triggered, [this]() {
+        convertEncoding("ISO 8859-1");
+    });
+
+    QAction* latin9Action = otherMenu->addAction("ISO 8859-15 (Latin-9)");
+    connect(latin9Action, &QAction::triggered, [this]() {
+        convertEncoding("ISO 8859-15");
+    });
+
+    QAction* utf16Action = otherMenu->addAction("UTF-16");
+    connect(utf16Action, &QAction::triggered, [this]() {
+        convertEncoding("UTF-16");
+    });
+
+    QAction* utf32Action = otherMenu->addAction("UTF-32");
+    connect(utf32Action, &QAction::triggered, [this]() {
+        convertEncoding("UTF-32");
+    });
+
+    encodingMenu->addSeparator();
+
+    // Выбор произвольной кодировки
+    QAction* customAction = encodingMenu->addAction(tr("Custom Encoding..."));
+    customAction->setToolTip(tr("Выбрать кодировку из списка"));
+    connect(customAction, &QAction::triggered, [this]() {
+        bool ok;
+        QStringList codecs = {"UTF-8", "UTF-16", "UTF-32", "Windows-1251", "Windows-1252",
+                              "KOI8-R", "KOI8-U", "CP866", "ISO 8859-1", "ISO 8859-5",
+                              "ISO 8859-15", "ASCII", "Shift_JIS", "GB18030", "Big5"};
+        QString codecName = QInputDialog::getItem(this, tr("Выберите кодировку"),
+                                                   tr("Кодировка:"), codecs, 0, false, &ok);
+        if (ok && !codecName.isEmpty()) {
+            convertEncoding(codecName);
+        }
+    });
+
+    // Меню Справка
+    QMenu* helpMenu = menuBar->addMenu(tr("Help"));
+
+    QAction* helpAction = helpMenu->addAction(tr("Help..."));
+    helpAction->setShortcut(QKeySequence::HelpContents);
+    connect(helpAction, &QAction::triggered, this, &MainWindow::showHelp);
+
     // Подменю языков - теперь заполняется динамически
     QMenu* langMenu = helpMenu->addMenu(tr("Language"));
     
@@ -593,141 +729,7 @@ void MainWindow::createMenuBar()
         });
     }
     
-    // Меню Кодировка
-    QMenu* encodingMenu = menuBar->addMenu(tr("Encoding"));
-    
-    // Автоопределение кодировки - работает даже без сохранения файла
-    QAction* autoDetectAction = encodingMenu->addAction(tr("Auto Detect"));
-    autoDetectAction->setToolTip(tr("Автоматически определить кодировку текста в редакторе"));
-    connect(autoDetectAction, &QAction::triggered, [this]() {
-        QString content = m_markdownEditor->toPlainText();
-        
-        // Пробуем определить кодировку путем перебора популярных кодировок
-        QList<QByteArray> codecNames = {
-            "UTF-8", "Windows-1251", "KOI8-R", "CP866", "ISO 8859-5",
-            "UTF-16", "UTF-32", "Windows-1252", "ISO 8859-1"
-        };
-        
-        QString detectedCodec = "UTF-8"; // По умолчанию
-        int bestScore = 0;
-        
-        for (const QByteArray& codecName : codecNames) {
-            QTextCodec* codec = QTextCodec::codecForName(codecName);
-            if (!codec) continue;
-            
-            // Кодируем и декодируем текст
-            QByteArray encoded = codec->fromUnicode(content);
-            QString decoded = codec->toUnicode(encoded);
-            
-            // Считаем сколько символов совпало
-            int score = 0;
-            for (int i = 0; i < qMin(content.length(), decoded.length()); i++) {
-                if (content[i] == decoded[i]) score++;
-            }
-            
-            if (score > bestScore) {
-                bestScore = score;
-                detectedCodec = codecName;
-            }
-        }
-        
-        m_statusBar->showMessage(tr("Предполагаемая кодировка: ") + detectedCodec);
-        
-        // Показываем информацию в диалоге
-        QMessageBox::information(this, tr("Автоопределение кодировки"),
-            tr("Наиболее вероятная кодировка: %1\n\n"
-               "Текст содержит %2 символов.\n"
-               "Для изменения кодировки используйте меню Encoding.")
-            .arg(detectedCodec).arg(content.length()));
-    });
-    
-    encodingMenu->addSeparator();
-    
-    // Популярные кодировки
-    QAction* utf8Action = encodingMenu->addAction("UTF-8");
-    utf8Action->setToolTip(tr("Конвертировать в UTF-8"));
-    connect(utf8Action, &QAction::triggered, [this]() {
-        convertEncoding("UTF-8");
-    });
-    
-    QAction* utf8BomAction = encodingMenu->addAction("UTF-8 with BOM");
-    utf8BomAction->setToolTip(tr("Конвертировать в UTF-8 с BOM"));
-    connect(utf8BomAction, &QAction::triggered, [this]() {
-        convertEncoding("UTF-8");
-    });
-    
-    QAction* asciiAction = encodingMenu->addAction("ASCII");
-    asciiAction->setToolTip(tr("Конвертировать в ASCII"));
-    connect(asciiAction, &QAction::triggered, [this]() {
-        convertEncoding("ASCII");
-    });
-    
-    encodingMenu->addSeparator();
-    
-    // Кириллические кодировки
-    QMenu* cyrillicMenu = encodingMenu->addMenu(tr("Cyrillic"));
-    
-    QAction* win1251Action = cyrillicMenu->addAction("Windows-1251");
-    connect(win1251Action, &QAction::triggered, [this]() {
-        convertEncoding("Windows-1251");
-    });
-    
-    QAction* koi8rAction = cyrillicMenu->addAction("KOI8-R");
-    connect(koi8rAction, &QAction::triggered, [this]() {
-        convertEncoding("KOI8-R");
-    });
-    
-    QAction* cp866Action = cyrillicMenu->addAction("CP866");
-    connect(cp866Action, &QAction::triggered, [this]() {
-        convertEncoding("CP866");
-    });
-    
-    QAction* iso88595Action = cyrillicMenu->addAction("ISO 8859-5");
-    connect(iso88595Action, &QAction::triggered, [this]() {
-        convertEncoding("ISO 8859-5");
-    });
-    
-    encodingMenu->addSeparator();
-    
-    // Другие популярные кодировки
-    QMenu* otherMenu = encodingMenu->addMenu(tr("Other"));
-    
-    QAction* latin1Action = otherMenu->addAction("ISO 8859-1 (Latin-1)");
-    connect(latin1Action, &QAction::triggered, [this]() {
-        convertEncoding("ISO 8859-1");
-    });
-    
-    QAction* latin9Action = otherMenu->addAction("ISO 8859-15 (Latin-9)");
-    connect(latin9Action, &QAction::triggered, [this]() {
-        convertEncoding("ISO 8859-15");
-    });
-    
-    QAction* utf16Action = otherMenu->addAction("UTF-16");
-    connect(utf16Action, &QAction::triggered, [this]() {
-        convertEncoding("UTF-16");
-    });
-    
-    QAction* utf32Action = otherMenu->addAction("UTF-32");
-    connect(utf32Action, &QAction::triggered, [this]() {
-        convertEncoding("UTF-32");
-    });
-    
-    encodingMenu->addSeparator();
-    
-    // Выбор произвольной кодировки
-    QAction* customAction = encodingMenu->addAction(tr("Custom Encoding..."));
-    customAction->setToolTip(tr("Выбрать кодировку из списка"));
-    connect(customAction, &QAction::triggered, [this]() {
-        bool ok;
-        QStringList codecs = {"UTF-8", "UTF-16", "UTF-32", "Windows-1251", "Windows-1252", 
-                              "KOI8-R", "KOI8-U", "CP866", "ISO 8859-1", "ISO 8859-5", 
-                              "ISO 8859-15", "ASCII", "Shift_JIS", "GB18030", "Big5"};
-        QString codecName = QInputDialog::getItem(this, tr("Выберите кодировку"),
-                                                   tr("Кодировка:"), codecs, 0, false, &ok);
-        if (ok && !codecName.isEmpty()) {
-            convertEncoding(codecName);
-        }
-    });
+
     
     helpMenu->addSeparator();
     

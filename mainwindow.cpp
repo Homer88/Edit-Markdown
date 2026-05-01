@@ -94,11 +94,15 @@ void MainWindow::initUI()
     QFont monoFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     monoFont.setPointSize(12);
     m_markdownEditor->setFont(monoFont);
+    m_markdownEditor->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_markdownEditor, &QPlainTextEdit::customContextMenuRequested, this, &MainWindow::showEditorContextMenu);
     
     // Создаем редактор предпросмотра (WYSIWYG)
     m_previewEditor = new QTextEdit(splitter);
     m_previewEditor->setReadOnly(true);
     m_previewEditor->setPlaceholderText("Предпросмотр будет здесь...");
+    m_previewEditor->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_previewEditor, &QTextEdit::customContextMenuRequested, this, &MainWindow::showEditorContextMenu);
     
     // Устанавливаем размеры панелей сплиттера (50/50)
     splitter->setSizes(QList<int>() << 600 << 600);
@@ -1602,6 +1606,50 @@ void MainWindow::showHelp()
 {
     HelpWindow* helpWindow = new HelpWindow(this);
     helpWindow->exec();
+}
+
+/**
+ * @brief Показать контекстное меню редактора при клике правой кнопкой
+ * @param pos Позиция курсора в виджете
+ */
+void MainWindow::showEditorContextMenu(const QPoint& pos)
+{
+    QMenu contextMenu(this);
+    
+    // Добавляем пункты редактирования
+    QAction* undoAction = contextMenu.addAction(tr("Отменить"));
+    undoAction->setShortcut(QKeySequence::Undo);
+    connect(undoAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::undo);
+    
+    QAction* redoAction = contextMenu.addAction(tr("Повторить"));
+    redoAction->setShortcut(QKeySequence::Redo);
+    connect(redoAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::redo);
+    
+    contextMenu.addSeparator();
+    
+    QAction* cutAction = contextMenu.addAction(tr("Вырезать"));
+    cutAction->setShortcut(QKeySequence::Cut);
+    connect(cutAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::cut);
+    
+    QAction* copyAction = contextMenu.addAction(tr("Копировать"));
+    copyAction->setShortcut(QKeySequence::Copy);
+    connect(copyAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::copy);
+    
+    QAction* pasteAction = contextMenu.addAction(tr("Вставить"));
+    pasteAction->setShortcut(QKeySequence::Paste);
+    connect(pasteAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::paste);
+    
+    contextMenu.addSeparator();
+    
+    QAction* selectAllAction = contextMenu.addAction(tr("Выделить всё"));
+    selectAllAction->setShortcut(QKeySequence::SelectAll);
+    connect(selectAllAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::selectAll);
+    
+    // Показываем меню в позиции курсора
+    QWidget* editor = qobject_cast<QWidget*>(sender());
+    if (editor) {
+        contextMenu.exec(editor->mapToGlobal(pos));
+    }
 }
 
 /**

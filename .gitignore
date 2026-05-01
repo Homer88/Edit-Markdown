@@ -1,25 +1,39 @@
 ```
 # Build artifacts
 build/
-.qmake.stash
-
-# CMake files
 CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-
-# Qt auto-generated files
+*.cmake
+*.dir/
+*.make
 *_autogen/
 
-# Compiled objects
-*.o
-*.obj
-*.a
-*.so
-*.dll
-*.exe
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
 
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# OS files
+.DS_Store
+Thumbs.db
 ```

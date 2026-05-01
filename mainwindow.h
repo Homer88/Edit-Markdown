@@ -196,6 +196,12 @@ private slots:
     void showSpellingContextMenu(int position, const QString& word);
     
     /**
+     * @brief Показать контекстное меню редактора при клике правой кнопкой
+     * @param pos Позиция курсора в виджете
+     */
+    void showEditorContextMenu(const QPoint& pos);
+    
+    /**
      * @brief Открытие окна справки
      */
     void showHelp();

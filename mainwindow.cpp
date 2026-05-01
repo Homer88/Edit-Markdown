@@ -2822,6 +2822,8 @@ void MainWindow::updatePreview()
     if (!m_isPreviewVisible) return;
     
     QString markdownText = m_markdownEditor->toPlainText();
+    // Замена одинарных переносов строк на двойные пробелы + перенос для корректного отображения в Markdown
+    markdownText.replace("\n", "  \n");
     QString htmlContent = m_parser->parse(markdownText);
     
     // Формируем полный HTML с базовыми стилями

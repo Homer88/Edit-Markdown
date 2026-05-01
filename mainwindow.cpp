@@ -23,6 +23,81 @@
 #include <QStandardPaths>
 #include <QTextCodec>
 #include <QTextStream>
+#include <QPainter>
+#include <QTextBlock>
+
+// Реализация LineNumberArea
+LineNumberArea::LineNumberArea(QPlainTextEdit *editor)
+    : QWidget(editor)
+{
+    textEditor = editor;
+}
+
+QSize LineNumberArea::sizeHint() const
+{
+    return QSize(textEditor->fontMetrics().horizontalAdvance(QLatin1Char('9')) * 4 + 10, 0);
+}
+
+void LineNumberArea::paintEvent(QPaintEvent *event)
+{
+    QPainter painter(this);
+    painter.fillRect(event->rect(), Qt::lightGray);
+    
+    QTextBlock block = textEditor->firstVisibleBlock();
+    int blockNumber = block.blockNumber();
+    qreal top = qRound(textEditor->blockBoundingGeometry(block).translated(textEditor->contentOffset()).top());
+    qreal bottom = top + qRound(textEditor->blockBoundingRect(block).height());
+    
+    while (block.isValid() && top <= event->rect().bottom()) {
+        if (block.isVisible() && bottom >= event->rect().top()) {
+            QString number = QString::number(blockNumber + 1);
+            painter.setPen(Qt::black);
+            painter.drawText(0, top, width() - 5, textEditor->fontMetrics().height(),
+                             Qt::AlignRight | Qt::AlignVCenter, number);
+        }
+        
+        block = block.next();
+        top = bottom;
+        bottom = top + qRound(textEditor->blockBoundingRect(block).height());
+        ++blockNumber;
+    }
+}
+
+// Реализация PlainTextEditWithLineNumbers
+PlainTextEditWithLineNumbers::PlainTextEditWithLineNumbers(QWidget *parent)
+    : QPlainTextEdit(parent)
+{
+    m_lineNumberArea = new LineNumberArea(this);
+    
+    connect(this, &QPlainTextEdit::blockCountChanged, this, &PlainTextEditWithLineNumbers::updateLineNumberAreaWidth);
+    connect(this, &QPlainTextEdit::updateRequest, this, &PlainTextEditWithLineNumbers::updateLineNumberArea);
+    
+    updateLineNumberAreaWidth(0);
+}
+
+void PlainTextEditWithLineNumbers::resizeEvent(QResizeEvent *event)
+{
+    QPlainTextEdit::resizeEvent(event);
+    
+    QRect cr = contentsRect();
+    m_lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), m_lineNumberArea->sizeHint().width(), cr.height()));
+}
+
+void PlainTextEditWithLineNumbers::updateLineNumberAreaWidth(int /* newBlockCount */)
+{
+    setViewportMargins(m_lineNumberArea->sizeHint().width(), 0, 0, 0);
+}
+
+void PlainTextEditWithLineNumbers::updateLineNumberArea(const QRect &rect, int dy)
+{
+    if (dy)
+        m_lineNumberArea->scroll(0, dy);
+    else
+        m_lineNumberArea->update(0, rect.y(), m_lineNumberArea->width(), rect.height());
+    
+    if (rect.contains(viewport()->rect()))
+        updateLineNumberAreaWidth(0);
+}
 
 /**
  * @brief Конструктор главного окна
@@ -88,8 +163,8 @@ void MainWindow::initUI()
     // Создаем сплиттер для разделения экрана
     QSplitter* splitter = new QSplitter(Qt::Horizontal, centralWidget);
     
-    // Создаем редактор Markdown (текстовый)
-    m_markdownEditor = new QPlainTextEdit(splitter);
+    // Создаем редактор Markdown (текстовый) с нумерацией строк
+    m_markdownEditor = new PlainTextEditWithLineNumbers(splitter);
     m_markdownEditor->setPlaceholderText("Введите текст в формате Markdown...");
     QFont monoFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     monoFont.setPointSize(12);

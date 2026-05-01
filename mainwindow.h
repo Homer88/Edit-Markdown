@@ -11,9 +11,52 @@
 #include <QStatusBar>
 #include <QSplitter>
 #include <QTranslator>
+#include <QWidget>
 #include "markdownparser.h"
 #include "spellchecker.h"
 #include "helpwindow.h"
+
+/**
+ * @class LineNumberArea
+ * @brief Виджет для отображения номеров строк слева от редактора
+ */
+class LineNumberArea : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit LineNumberArea(QPlainTextEdit *editor);
+    
+    QSize sizeHint() const override;
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
+private:
+    QPlainTextEdit *textEditor;
+};
+
+/**
+ * @class PlainTextEditWithLineNumbers
+ * @brief QPlainTextEdit с поддержкой нумерации строк
+ */
+class PlainTextEditWithLineNumbers : public QPlainTextEdit
+{
+    Q_OBJECT
+public:
+    explicit PlainTextEditWithLineNumbers(QWidget *parent = nullptr);
+    
+    LineNumberArea* lineNumberArea() const { return m_lineNumberArea; }
+
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
+private slots:
+    void updateLineNumberAreaWidth(int newBlockCount);
+    void updateLineNumberArea(const QRect &rect, int dy);
+
+private:
+    LineNumberArea *m_lineNumberArea;
+};
 
 /**
  * @class MainWindow

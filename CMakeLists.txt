@@ -7,6 +7,12 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+# Настройки для Windows/MSVC
+if(WIN32)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS NOMINMAX UNICODE _UNICODE)
+    set(CMAKE_WIN32_EXECUTABLE ON)
+endif()
+
 # Найти Qt5 или Qt6
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
@@ -31,12 +37,23 @@ set(PROJECT_SOURCES
     resources.qrc
 )
 
+# Явная генерация MOC для классов с Q_OBJECT (надежность для MSVC)
+qt5_wrap_cpp(MOC_SOURCES
+    mainwindow.h
+    helpwindow.h
+    markdownparser.h
+    spellchecker.h
+    settings.h
+    settings_dialog.h
+    markdownhighlighter.h
+)
+
 # --- Сборка Hunspell из исходников ---
 # Добавляем подпроект Hunspell (исходники лежат в hunspell/hunspell)
 add_subdirectory(hunspell)
 
 # Создаем исполняемый файл и указываем выходную папку
-add_executable(markdown-editor ${PROJECT_SOURCES})
+add_executable(markdown-editor ${PROJECT_SOURCES} ${MOC_SOURCES})
 set_target_properties(markdown-editor PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/application"
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/application"
@@ -48,6 +65,11 @@ target_include_directories(markdown-editor PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/hunspell/hunspell
 )
+
+# Определяем HUNSPELL_STATIC для использования статической библиотеки Hunspell
+if(WIN32)
+    target_compile_definitions(markdown-editor PRIVATE HUNSPELL_STATIC)
+endif()
 
 # Линкуем библиотеки
 target_link_libraries(markdown-editor PRIVATE 

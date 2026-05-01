@@ -299,24 +299,50 @@ QString MarkdownParser::parseImages(const QString& text)
 QString MarkdownParser::parseParagraphs(const QString& text)
 {
     QString result = text;
-    QStringList paragraphs = result.split("\n\n");
+    QStringList lines = result.split('\n');
     QString processed;
+    QString currentParagraph;
     
-    for (const QString& para : paragraphs) {
-        QString trimmed = para.trimmed();
-        if (!trimmed.isEmpty() && 
-            !trimmed.startsWith("<h") &&
-            !trimmed.startsWith("<ul") &&
-            !trimmed.startsWith("<ol") &&
-            !trimmed.startsWith("<li") &&
-            !trimmed.startsWith("<blockquote") &&
-            !trimmed.startsWith("<pre") &&
-            !trimmed.startsWith("<hr")) {
-            processed += "<p>" + trimmed + "</p>";
+    for (int i = 0; i < lines.size(); ++i) {
+        QString line = lines[i];
+        QString trimmed = line.trimmed();
+        
+        // Проверяем, является ли строка блочным элементом HTML
+        bool isBlockElement = trimmed.startsWith("<h") ||
+                              trimmed.startsWith("<ul") ||
+                              trimmed.startsWith("<ol") ||
+                              trimmed.startsWith("<li") ||
+                              trimmed.startsWith("<blockquote") ||
+                              trimmed.startsWith("<pre") ||
+                              trimmed.startsWith("<hr");
+        
+        if (isBlockElement) {
+            // Если есть накопленный параграф, закрываем его
+            if (!currentParagraph.isEmpty()) {
+                processed += "<p>" + currentParagraph + "</p>\n";
+                currentParagraph.clear();
+            }
+            // Добавляем блочный элемент как есть
+            processed += trimmed + "\n";
+        } else if (trimmed.isEmpty()) {
+            // Пустая строка - конец параграфа
+            if (!currentParagraph.isEmpty()) {
+                processed += "<p>" + currentParagraph + "</p>\n";
+                currentParagraph.clear();
+            }
         } else {
-            processed += trimmed;
+            // Обычная строка - добавляем в текущий параграф
+            if (!currentParagraph.isEmpty()) {
+                currentParagraph += "<br>" + trimmed;
+            } else {
+                currentParagraph = trimmed;
+            }
         }
-        processed += "\n";
+    }
+    
+    // Закрываем последний параграф, если он есть
+    if (!currentParagraph.isEmpty()) {
+        processed += "<p>" + currentParagraph + "</p>\n";
     }
     
     return processed;

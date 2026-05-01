@@ -6,43 +6,44 @@
 *.so
 *.a
 *.out
-build/
-dist/
 
 # Dependencies
 venv/
 .venv/
 __pycache__/
 *.egg-info/
-.node-version
-.npm/
-.yarn/
+dist/
+build/
+target/
+.gradle/
 
-# Editors
-.vscode/
-.idea/
+# Logs and temp files
+*.log
+*.tmp
 *.swp
 *.swo
-*.tmp
-
-# Logs
-*.log
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Coverage
-.coverage
-coverage/
-htmlcov/
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# OS
+# System files
 .DS_Store
 Thumbs.db
 
-# Compression
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Compressed files
 *.zip
 *.gz
 *.tar

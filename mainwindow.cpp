@@ -2158,6 +2158,11 @@ void MainWindow::insertMarkdownFormatting(const QString& prefix, const QString& 
     }
     
     m_markdownEditor->setFocus();
+    
+    // Принудительно обновляем предпросмотр
+    if (!m_isWysiwygMode && m_isPreviewVisible) {
+        updatePreview();
+    }
 }
 
 /**
@@ -2190,6 +2195,11 @@ void MainWindow::insertMarkdownAtCursor(const QString& text)
     
     m_markdownEditor->setTextCursor(cursor);
     m_markdownEditor->setFocus();
+    
+    // Принудительно обновляем предпросмотр
+    if (!m_isWysiwygMode && m_isPreviewVisible) {
+        updatePreview();
+    }
 }
 
 /**

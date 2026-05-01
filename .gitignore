@@ -1,26 +1,30 @@
 ```
-# Build artifacts
-build/
-cmake-build-*/
-CMakeFiles/
-CMakeCache.txt
-Makefile
-*.cmake
+# Build scripts and artifacts
+scripts/build-*.sh
+scripts/build-*.bat
+
+# Compiled and binary files
 *.o
-*.a
-*.so
-*.dylib
-*.dll
+*.obj
 *.exe
+*.dll
+*.so
+*.a
 *.out
 
-# Dependencies
-vendor/
+# Build directories
+build/
+dist/
+target/
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.gradle/
 
 # Environment
 .env
@@ -33,7 +37,16 @@ vendor/
 *.swp
 *.swo
 
-# OS
+# Logs and temp files
+*.log
+*.tmp
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# System files
 .DS_Store
 Thumbs.db
 ```

@@ -321,3 +321,24 @@ QString MarkdownParser::parseParagraphs(const QString& text)
     
     return processed;
 }
+
+
+/**
+ * @brief Преобразует HTML обратно в Markdown (для синхронизации WYSIWYG -> Markdown)
+ * @param html HTML текст для конвертации
+ * @return QString Текст в формате Markdown
+ */
+QString MarkdownParser::htmlToMarkdown(const QString& html)
+{
+    QString result = html;
+    
+    // Извлекаем только текст из body, игнорируя HTML теги
+    QTextDocument doc;
+    doc.setHtml(result);
+    result = doc.toPlainText();
+    
+    // Базовая обработка: разделяем абзацы двойным переносом строки
+    result.replace(QRegExp("\\n\\s*\\n"), "\\n\\n");
+    
+    return result.trimmed();
+}

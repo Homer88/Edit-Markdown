@@ -266,6 +266,11 @@ private slots:
     void makeSelectedTextLink();
     
     /**
+     * @brief Обработчик изменения текста в WYSIWYG редакторе для синхронизации с Markdown
+     */
+    void onWysiwygTextChanged();
+    
+    /**
      * @brief Открытие окна справки
      */
     void showHelp();

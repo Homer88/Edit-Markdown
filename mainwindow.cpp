@@ -197,6 +197,9 @@ void MainWindow::initUI()
     
     // Подключаем сигнал изменения текста
     connect(m_markdownEditor, &QPlainTextEdit::textChanged, this, &MainWindow::onTextChanged);
+    
+    // Подключаем сигнал изменения текста в WYSIWYG редакторе для синхронизации с Markdown
+    connect(m_previewEditor, &QTextEdit::textChanged, this, &MainWindow::onWysiwygTextChanged);
 }
 
 /**
@@ -997,6 +1000,11 @@ void MainWindow::toggleWysiwygMode()
     m_isWysiwygMode = true;
     m_wysiwygAction->setChecked(true);
     m_markdownAction->setChecked(false);
+    
+    // Синхронизируем содержимое: конвертируем Markdown в HTML для WYSIWYG редактора
+    QString markdownText = m_markdownEditor->toPlainText();
+    QString htmlText = m_parser->parse(markdownText);
+    m_previewEditor->setHtml(htmlText);
     
     // Скрываем редактор Markdown, показываем предпросмотр как редактор
     m_markdownEditor->hide();
@@ -2438,4 +2446,28 @@ void MainWindow::convertEncoding(const QString& codecName)
         }
         m_markdownEditor->setPlainText(recodedContent);
     }
+}
+
+/**
+ * @brief Обработчик изменения текста в WYSIWYG редакторе для синхронизации с Markdown
+ */
+void MainWindow::onWysiwygTextChanged()
+{
+    if (!m_isWysiwygMode) {
+        // Если мы не в режиме WYSIWYG, игнорируем изменения
+        return;
+    }
+    
+    // Получаем HTML из WYSIWYG редактора и конвертируем обратно в Markdown
+    QString htmlText = m_previewEditor->toHtml();
+    QString markdownText = m_parser->htmlToMarkdown(htmlText);
+    
+    // Блокируем сигналы чтобы избежать рекурсивного вызова
+    m_markdownEditor->blockSignals(true);
+    m_markdownEditor->setPlainText(markdownText);
+    m_markdownEditor->blockSignals(false);
+    
+    // Обновляем статус модификации
+    m_isModified = true;
+    updateWindowTitle();
 }

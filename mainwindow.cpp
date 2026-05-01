@@ -311,11 +311,10 @@ void MainWindow::createToolBar()
     QHBoxLayout* tableLayout = new QHBoxLayout(tableWidget);
     tableLayout->setContentsMargins(0, 0, 0, 0);
     tableLayout->setSpacing(2);
-    tableLayout->addWidget(new QPushButton("Таблица"));
     QToolButton* tableToolBtn = new QToolButton();
+    tableToolBtn->setDefaultAction(tableAction);
     tableToolBtn->setMenu(tableMenu);
-    tableToolBtn->setPopupMode(QToolButton::InstantPopup);
-    tableToolBtn->setText("▼");
+    tableToolBtn->setPopupMode(QToolButton::MenuButtonPopup);
     tableLayout->addWidget(tableToolBtn);
     
     // Заменяем действие таблицы на виджет с меню

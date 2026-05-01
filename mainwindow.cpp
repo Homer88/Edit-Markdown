@@ -94,11 +94,15 @@ void MainWindow::initUI()
     QFont monoFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     monoFont.setPointSize(12);
     m_markdownEditor->setFont(monoFont);
+    m_markdownEditor->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_markdownEditor, &QPlainTextEdit::customContextMenuRequested, this, &MainWindow::showEditorContextMenu);
     
     // Создаем редактор предпросмотра (WYSIWYG)
     m_previewEditor = new QTextEdit(splitter);
     m_previewEditor->setReadOnly(true);
     m_previewEditor->setPlaceholderText("Предпросмотр будет здесь...");
+    m_previewEditor->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_previewEditor, &QTextEdit::customContextMenuRequested, this, &MainWindow::showEditorContextMenu);
     
     // Устанавливаем размеры панелей сплиттера (50/50)
     splitter->setSizes(QList<int>() << 600 << 600);
@@ -286,7 +290,9 @@ void MainWindow::createToolBar()
  */
 void MainWindow::createMenuBar()
 {
+    // Очищаем существующее меню перед созданием нового (чтобы избежать дублирования при смене языка)
     QMenuBar* menuBar = this->menuBar();
+    menuBar->clear();
     
     // Меню Файл
     QMenu* fileMenu = menuBar->addMenu(tr("File"));
@@ -463,33 +469,49 @@ void MainWindow::createMenuBar()
     // Меню Кодировка
     QMenu* encodingMenu = menuBar->addMenu(tr("Encoding"));
     
-    // Автоопределение кодировки
+    // Автоопределение кодировки - работает даже без сохранения файла
     QAction* autoDetectAction = encodingMenu->addAction(tr("Auto Detect"));
-    autoDetectAction->setToolTip(tr("Автоматически определить кодировку файла"));
+    autoDetectAction->setToolTip(tr("Автоматически определить кодировку текста в редакторе"));
     connect(autoDetectAction, &QAction::triggered, [this]() {
-        if (!m_currentFile.isEmpty()) {
-            QFile file(m_currentFile);
-            if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                QTextStream in(&file);
-                in.setAutoDetectUnicode(true);
-                QByteArray bom = file.peek(4);
-                if (bom.startsWith(QByteArray::fromHex("EFBBBF"))) {
-                    in.setCodec("UTF-8");
-                } else if (bom.startsWith(QByteArray::fromHex("FFFE0000")) || bom.startsWith(QByteArray::fromHex("0000FEFF"))) {
-                    in.setCodec("UTF-32");
-                } else if (bom.startsWith(QByteArray::fromHex("FFFE")) || bom.startsWith(QByteArray::fromHex("FEFF"))) {
-                    in.setCodec("UTF-16");
-                } else {
-                    in.setAutoDetectUnicode(true);
-                }
-                QString content = in.readAll();
-                file.close();
-                m_markdownEditor->setPlainText(content);
-                m_statusBar->showMessage(tr("Кодировка определена автоматически: ") + in.codec()->name());
+        QString content = m_markdownEditor->toPlainText();
+        
+        // Пробуем определить кодировку путем перебора популярных кодировок
+        QList<QByteArray> codecNames = {
+            "UTF-8", "Windows-1251", "KOI8-R", "CP866", "ISO 8859-5",
+            "UTF-16", "UTF-32", "Windows-1252", "ISO 8859-1"
+        };
+        
+        QString detectedCodec = "UTF-8"; // По умолчанию
+        int bestScore = 0;
+        
+        for (const QByteArray& codecName : codecNames) {
+            QTextCodec* codec = QTextCodec::codecForName(codecName);
+            if (!codec) continue;
+            
+            // Кодируем и декодируем текст
+            QByteArray encoded = codec->fromUnicode(content);
+            QString decoded = codec->toUnicode(encoded);
+            
+            // Считаем сколько символов совпало
+            int score = 0;
+            for (int i = 0; i < qMin(content.length(), decoded.length()); i++) {
+                if (content[i] == decoded[i]) score++;
             }
-        } else {
-            m_statusBar->showMessage(tr("Сначала откройте файл"));
+            
+            if (score > bestScore) {
+                bestScore = score;
+                detectedCodec = codecName;
+            }
         }
+        
+        m_statusBar->showMessage(tr("Предполагаемая кодировка: ") + detectedCodec);
+        
+        // Показываем информацию в диалоге
+        QMessageBox::information(this, tr("Автоопределение кодировки"),
+            tr("Наиболее вероятная кодировка: %1\n\n"
+               "Текст содержит %2 символов.\n"
+               "Для изменения кодировки используйте меню Encoding.")
+            .arg(detectedCodec).arg(content.length()));
     });
     
     encodingMenu->addSeparator();
@@ -844,6 +866,12 @@ void MainWindow::toggleWysiwygMode()
     m_previewEditor->setReadOnly(false);
     m_previewEditor->setFocus();
     
+    // Устанавливаем размеры сплиттера так, чтобы previewEditor занимал всё пространство
+    QSplitter* splitter = qobject_cast<QSplitter*>(m_markdownEditor->parentWidget());
+    if (splitter) {
+        splitter->setSizes(QList<int>() << 0 << splitter->width());
+    }
+    
     m_currentEditor = m_previewEditor;
     m_statusBar->showMessage("Режим WYSIWYG");
 }
@@ -866,6 +894,12 @@ void MainWindow::toggleMarkdownMode()
     m_previewEditor->hide();
     m_markdownEditor->show();
     m_markdownEditor->setFocus();
+    
+    // Восстанавливаем размеры сплиттера (50/50)
+    QSplitter* splitter = qobject_cast<QSplitter*>(m_markdownEditor->parentWidget());
+    if (splitter) {
+        splitter->setSizes(QList<int>() << splitter->width() / 2 << splitter->width() / 2);
+    }
     
     m_currentEditor = m_markdownEditor;
     m_statusBar->showMessage("Режим Markdown");
@@ -1170,11 +1204,25 @@ void MainWindow::insertHorizontalRule()
  */
 void MainWindow::insertTable()
 {
-    QString table = "\n| Заголовок 1 | Заголовок 2 | Заголовок 3 |\n"
-                    "|-------------|-------------|-------------|\n"
-                    "| Ячейка 1    | Ячейка 2    | Ячейка 3    |\n"
-                    "| Ячейка 4    | Ячейка 5    | Ячейка 6    |\n\n";
-    insertMarkdownAtCursor(table);
+    if (m_isWysiwygMode) {
+        // В режиме WYSIWYG вставляем HTML таблицу напрямую
+        QTextCursor cursor = m_previewEditor->textCursor();
+        QString htmlTable = "<table border=\"1\">"
+                           "<tr><th>Заголовок 1</th><th>Заголовок 2</th><th>Заголовок 3</th></tr>"
+                           "<tr><td>Ячейка 1</td><td>Ячейка 2</td><td>Ячейка 3</td></tr>"
+                           "<tr><td>Ячейка 4</td><td>Ячейка 5</td><td>Ячейка 6</td></tr>"
+                           "</table><p><br/></p>";
+        cursor.insertHtml(htmlTable);
+        m_previewEditor->setTextCursor(cursor);
+        m_previewEditor->setFocus();
+    } else {
+        // В режиме Markdown вставляем Markdown таблицу
+        QString table = "\n| Заголовок 1 | Заголовок 2 | Заголовок 3 |\n"
+                        "|-------------|-------------|-------------|\n"
+                        "| Ячейка 1    | Ячейка 2    | Ячейка 3    |\n"
+                        "| Ячейка 4    | Ячейка 5    | Ячейка 6    |\n\n";
+        insertMarkdownAtCursor(table);
+    }
 }
 
 /**
@@ -1291,6 +1339,68 @@ void MainWindow::deleteTableRow()
     if (cursor.position() < editor->toPlainText().length()) {
         cursor.deleteChar();
     }
+}
+
+/**
+ * @brief Удаление всей таблицы
+ * Удаляет всю таблицу, в которой находится курсор
+ */
+void MainWindow::deleteTable()
+{
+    QPlainTextEdit* editor = m_markdownEditor;
+    QString text = editor->toPlainText();
+    int cursorPos = editor->textCursor().position();
+    
+    // Разбиваем текст на строки
+    QStringList lines = text.split("\n");
+    int currentLineNum = text.left(cursorPos).count("\n");
+    
+    bool inTable = false;
+    int tableStartLine = -1;
+    
+    // Ищем начало таблицы
+    for (int i = currentLineNum; i >= 0; --i) {
+        if (i < lines.size() && lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+            if (!inTable) {
+                tableStartLine = i;
+                inTable = true;
+            }
+        } else if (inTable) {
+            break;
+        }
+    }
+    
+    if (!inTable) {
+        QMessageBox::information(this, "Информация", "Курсор должен находиться в таблице");
+        return;
+    }
+    
+    // Ищем конец таблицы
+    int tableEndLine = tableStartLine;
+    for (int i = tableStartLine; i < lines.size(); ++i) {
+        if (lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+            tableEndLine = i;
+        } else if (inTable) {
+            break;
+        }
+    }
+    
+    // Вычисляем позиции для удаления
+    int startPos = 0;
+    for (int i = 0; i < tableStartLine; ++i) {
+        startPos += lines[i].length() + 1;
+    }
+    
+    int endPos = startPos;
+    for (int i = tableStartLine; i <= tableEndLine; ++i) {
+        endPos += lines[i].length() + 1;
+    }
+    
+    // Удаляем таблицу
+    QTextCursor cursor = editor->textCursor();
+    cursor.setPosition(startPos);
+    cursor.setPosition(endPos, QTextCursor::KeepAnchor);
+    cursor.removeSelectedText();
 }
 
 /**
@@ -1587,6 +1697,64 @@ void MainWindow::showHelp()
 }
 
 /**
+ * @brief Показать контекстное меню редактора при клике правой кнопкой
+ * @param pos Позиция курсора в виджете
+ */
+void MainWindow::showEditorContextMenu(const QPoint& pos)
+{
+    QMenu contextMenu(this);
+    
+    // Добавляем пункты редактирования
+    QAction* undoAction = contextMenu.addAction(tr("Отменить"));
+    undoAction->setShortcut(QKeySequence::Undo);
+    connect(undoAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::undo);
+    
+    QAction* redoAction = contextMenu.addAction(tr("Повторить"));
+    redoAction->setShortcut(QKeySequence::Redo);
+    connect(redoAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::redo);
+    
+    contextMenu.addSeparator();
+    
+    QAction* cutAction = contextMenu.addAction(tr("Вырезать"));
+    cutAction->setShortcut(QKeySequence::Cut);
+    connect(cutAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::cut);
+    
+    QAction* copyAction = contextMenu.addAction(tr("Копировать"));
+    copyAction->setShortcut(QKeySequence::Copy);
+    connect(copyAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::copy);
+    
+    QAction* pasteAction = contextMenu.addAction(tr("Вставить"));
+    pasteAction->setShortcut(QKeySequence::Paste);
+    connect(pasteAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::paste);
+    
+    contextMenu.addSeparator();
+    
+    QAction* selectAllAction = contextMenu.addAction(tr("Выделить всё"));
+    selectAllAction->setShortcut(QKeySequence::SelectAll);
+    connect(selectAllAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::selectAll);
+    
+    // --- Table Operations Submenu ---
+    contextMenu.addSeparator();
+    QMenu *tableMenu = contextMenu.addMenu(tr("Table"));
+    
+    QAction *insertTableAction = tableMenu->addAction(tr("Insert Table"));
+    connect(insertTableAction, &QAction::triggered, this, [this]() {
+        insertTable();
+    });
+
+    QAction *deleteTableAction = tableMenu->addAction(tr("Delete Table"));
+    connect(deleteTableAction, &QAction::triggered, this, [this]() {
+        deleteTable();
+    });
+    
+    // Показываем меню в позиции курсора
+    QWidget* editor = qobject_cast<QWidget*>(sender());
+    if (editor) {
+        contextMenu.exec(editor->mapToGlobal(pos));
+    }
+}
+
+/**
  * @brief Загрузка переводов для указанного языка
  * @param language Код языка ("ru", "en", "system")
  */
@@ -1698,11 +1866,6 @@ void MainWindow::changeTextColor()
  */
 void MainWindow::convertEncoding(const QString& codecName)
 {
-    if (m_currentFile.isEmpty()) {
-        QMessageBox::warning(this, tr("Ошибка"), tr("Сначала откройте файл для конвертации кодировки."));
-        return;
-    }
-    
     // Читаем текущий текст из редактора (он уже в Unicode)
     QString content = m_markdownEditor->toPlainText();
     
@@ -1735,30 +1898,44 @@ void MainWindow::convertEncoding(const QString& codecName)
         }
     }
     
-    // Сохраняем файл в новой кодировке
-    QFile file(m_currentFile);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::critical(this, tr("Ошибка"), tr("Не удалось сохранить файл."));
-        return;
+    // Если файл открыт - сохраняем в файл, иначе просто применяем кодировку к тексту
+    if (!m_currentFile.isEmpty()) {
+        // Сохраняем файл в новой кодировке
+        QFile file(m_currentFile);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QMessageBox::critical(this, tr("Ошибка"), tr("Не удалось сохранить файл."));
+            return;
+        }
+        
+        QTextStream out(&file);
+        out.setCodec(codecName.toUtf8());
+        
+        // Добавляем BOM для UTF-8, UTF-16, UTF-32
+        if (codecName.contains("UTF-8", Qt::CaseInsensitive)) {
+            out.setGenerateByteOrderMark(true);
+        } else if (codecName.contains("UTF-16", Qt::CaseInsensitive)) {
+            out.setGenerateByteOrderMark(true);
+        } else if (codecName.contains("UTF-32", Qt::CaseInsensitive)) {
+            out.setGenerateByteOrderMark(true);
+        }
+        
+        out << content;
+        file.close();
+        
+        m_statusBar->showMessage(tr("Файл конвертирован в кодировку: ") + codecName);
+        
+        // Перечитываем файл чтобы убедиться что всё корректно
+        openFile();
+    } else {
+        // Файл не открыт - просто показываем сообщение что кодировка будет применена при сохранении
+        m_statusBar->showMessage(tr("Кодировка %1 будет применена при сохранении файла").arg(codecName));
+        
+        // Для нового файла можно сразу перекодировать текст и показать результат
+        QString recodedContent = codec->toUnicode(codec->fromUnicode(content));
+        if (recodedContent != content) {
+            QMessageBox::information(this, tr("Информация"),
+                tr("Текст был перекодирован в %1. Некоторые символы могли измениться.").arg(codecName));
+        }
+        m_markdownEditor->setPlainText(recodedContent);
     }
-    
-    QTextStream out(&file);
-    out.setCodec(codecName.toUtf8());
-    
-    // Добавляем BOM для UTF-8, UTF-16, UTF-32
-    if (codecName.contains("UTF-8", Qt::CaseInsensitive)) {
-        out.setGenerateByteOrderMark(true);
-    } else if (codecName.contains("UTF-16", Qt::CaseInsensitive)) {
-        out.setGenerateByteOrderMark(true);
-    } else if (codecName.contains("UTF-32", Qt::CaseInsensitive)) {
-        out.setGenerateByteOrderMark(true);
-    }
-    
-    out << content;
-    file.close();
-    
-    m_statusBar->showMessage(tr("Файл конвертирован в кодировку: ") + codecName);
-    
-    // Перечитываем файл чтобы убедиться что всё корректно
-    openFile();
 }

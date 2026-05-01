@@ -164,6 +164,11 @@ private slots:
     void deleteTableRow();
     
     /**
+     * @brief Удаление всей таблицы
+     */
+    void deleteTable();
+    
+    /**
      * @brief Удаление столбца из таблицы
      */
     void deleteTableColumn();
@@ -194,6 +199,12 @@ private slots:
      * @param word Слово с ошибкой
      */
     void showSpellingContextMenu(int position, const QString& word);
+    
+    /**
+     * @brief Показать контекстное меню редактора при клике правой кнопкой
+     * @param pos Позиция курсора в виджете
+     */
+    void showEditorContextMenu(const QPoint& pos);
     
     /**
      * @brief Открытие окна справки

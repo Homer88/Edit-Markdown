@@ -1,3 +1,4 @@
+```
 # Compiled and build artifacts
 *.o
 *.obj
@@ -10,39 +11,37 @@ build/
 dist/
 
 # Dependencies
+node_modules/
 venv/
 .venv/
 __pycache__/
 *.egg-info/
-.node-version
-.npm/
-.yarn/
 
-# Editors
-.vscode/
-.idea/
+# Logs and temp files
+*.log
+*.tmp
 *.swp
 *.swo
-*.tmp
-
-# Logs
-*.log
 
 # Environment
 .env
 .env.local
 *.env.*
 
+# Editors
+.vscode/
+.idea/
+
 # Coverage
-.coverage
 coverage/
 htmlcov/
+.coverage
 
-# OS
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Compression
+# Compressed files
 *.zip
 *.gz
 *.tar
@@ -65,3 +64,4 @@ Thumbs.db
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+```

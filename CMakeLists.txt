@@ -26,6 +26,8 @@ set(PROJECT_SOURCES
     settings.h
     settings_dialog.cpp
     settings_dialog.h
+    markdownhighlighter.cpp
+    markdownhighlighter.h
     resources.qrc
 )
 

@@ -139,6 +139,26 @@ private slots:
      */
     void insertHorizontalRule();
     
+    /**
+     * @brief Вставка таблицы
+     */
+    void insertTable();
+    
+    /**
+     * @brief Вставка специального символа
+     */
+    void insertSpecialCharacter();
+    
+    /**
+     * @brief Вставка блока кода (многострочный)
+     */
+    void insertCodeBlock();
+    
+    /**
+     * @brief Вставка задачи (checkbox)
+     */
+    void insertTask();
+    
 private:
     /**
      * @brief Инициализация пользовательского интерфейса

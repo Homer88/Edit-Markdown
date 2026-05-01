@@ -6,6 +6,10 @@
 #include <QFont>
 #include <QFontDatabase>
 #include <QCloseEvent>
+#include <QDialog>
+#include <QLabel>
+#include <QPushButton>
+#include <QGridLayout>
 
 /**
  * @brief Конструктор главного окна
@@ -170,6 +174,28 @@ void MainWindow::createToolBar()
     QAction* hrAction = m_toolBar->addAction("Линия");
     hrAction->setToolTip("Горизонтальная линия");
     connect(hrAction, &QAction::triggered, this, &MainWindow::insertHorizontalRule);
+    
+    m_toolBar->addSeparator();
+    
+    // Кнопка таблицы
+    QAction* tableAction = m_toolBar->addAction("Таблица");
+    tableAction->setToolTip("Вставить таблицу");
+    connect(tableAction, &QAction::triggered, this, &MainWindow::insertTable);
+    
+    // Кнопка блока кода
+    QAction* codeBlockAction = m_toolBar->addAction("Блок кода");
+    codeBlockAction->setToolTip("Вставить многострочный блок кода");
+    connect(codeBlockAction, &QAction::triggered, this, &MainWindow::insertCodeBlock);
+    
+    // Кнопка задачи
+    QAction* taskAction = m_toolBar->addAction("Задача");
+    taskAction->setToolTip("Вставить задачу (checkbox)");
+    connect(taskAction, &QAction::triggered, this, &MainWindow::insertTask);
+    
+    // Кнопка спецсимволов
+    QAction* specialAction = m_toolBar->addAction("Спецсимволы");
+    specialAction->setToolTip("Вставить специальные символы");
+    connect(specialAction, &QAction::triggered, this, &MainWindow::insertSpecialCharacter);
     
     m_toolBar->addSeparator();
     
@@ -597,6 +623,80 @@ void MainWindow::insertImage()
 void MainWindow::insertHorizontalRule()
 {
     insertMarkdownAtCursor("\n---\n");
+}
+
+/**
+ * @brief Вставка таблицы
+ */
+void MainWindow::insertTable()
+{
+    QString table = "\n| Заголовок 1 | Заголовок 2 | Заголовок 3 |\n"
+                    "|-------------|-------------|-------------|\n"
+                    "| Ячейка 1    | Ячейка 2    | Ячейка 3    |\n"
+                    "| Ячейка 4    | Ячейка 5    | Ячейка 6    |\n\n";
+    insertMarkdownAtCursor(table);
+}
+
+/**
+ * @brief Вставка специального символа
+ */
+void MainWindow::insertSpecialCharacter()
+{
+    // Создаем диалог выбора спецсимвола
+    QDialog dialog(this);
+    dialog.setWindowTitle("Вставить специальный символ");
+    dialog.setMinimumSize(400, 300);
+    
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+    
+    QLabel* label = new QLabel("Выберите специальный символ:");
+    layout->addWidget(label);
+    
+    QGridLayout* gridLayout = new QGridLayout();
+    QStringList specialChars = {"©", "®", "™", "°", "±", "×", "÷", "≠", "≤", "≥", 
+                                "∞", "√", "∫", "∑", "π", "Ω", "µ", "¶", "§", "…",
+                                "—", "–", "«", "»", "„", "", "'", "'", "•", "·"};
+    
+    int row = 0, col = 0;
+    for (const QString& ch : specialChars) {
+        QPushButton* btn = new QPushButton(ch);
+        btn->setFixedSize(40, 40);
+        connect(btn, &QPushButton::clicked, [this, &dialog, ch]() {
+            insertMarkdownAtCursor(ch);
+            dialog.accept();
+        });
+        gridLayout->addWidget(btn, row, col);
+        col++;
+        if (col > 9) {
+            col = 0;
+            row++;
+        }
+    }
+    
+    layout->addLayout(gridLayout);
+    
+    dialog.exec();
+}
+
+/**
+ * @brief Вставка блока кода (многострочный)
+ */
+void MainWindow::insertCodeBlock()
+{
+    QString codeBlock = "\n```\n"
+                        "// Ваш код здесь\n"
+                        "\n"
+                        "```\n";
+    insertMarkdownAtCursor(codeBlock);
+}
+
+/**
+ * @brief Вставка задачи (checkbox)
+ */
+void MainWindow::insertTask()
+{
+    QString task = "- [ ] Задача\n";
+    insertMarkdownAtCursor(task);
 }
 
 /**

@@ -9,6 +9,7 @@
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QSplitter>
+#include <QTranslator>
 #include "markdownparser.h"
 #include "spellchecker.h"
 #include "helpwindow.h"
@@ -22,6 +23,7 @@
  * - Переключение между режимами редактирования
  * - Панель инструментов с кнопками форматирования
  * - Поддержку открытия и сохранения файлов
+ * - Многоязычный интерфейс с автоопределением языка системы
  */
 class MainWindow : public QMainWindow
 {
@@ -198,6 +200,17 @@ private slots:
      */
     void showHelp();
     
+    /**
+     * @brief Изменение языка интерфейса
+     * @param language Код языка ("ru", "en", "system")
+     */
+    void changeLanguage(const QString& language);
+    
+    /**
+     * @brief Изменение цвета текста
+     */
+    void changeTextColor();
+    
 private:
     /**
      * @brief Инициализация пользовательского интерфейса
@@ -228,6 +241,12 @@ private:
      * @brief Обновление заголовка окна
      */
     void updateWindowTitle();
+    
+    /**
+     * @brief Загрузка переводов для указанного языка
+     * @param language Код языка
+     */
+    void loadTranslations(const QString& language);
     
     /**
      * @brief Вспомогательная функция для вставки Markdown форматирования
@@ -264,6 +283,10 @@ private:
     // Проверка орфографии
     SpellChecker* m_spellChecker;      ///< Экземпляр проверки орфографии
     QList<QPair<int, int>> m_spellingErrors;  ///< Список ошибок орфографии (позиция, длина)
+    
+    // Переводы
+    QTranslator* m_translator;         ///< Основной переводчик интерфейса
+    QString m_currentLanguage;         ///< Текущий выбранный язык
 };
 
 #endif // MAINWINDOW_H

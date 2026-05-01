@@ -44,8 +44,12 @@ HEADERS += mainwindow.h \
            spellchecker.h \
            helpwindow.h
 
-# Ресурсы (если будут добавлены иконки)
-# RESOURCES += resources.qrc
+# Файлы переводов
+TRANSLATIONS += translations/editor_ru.ts \
+                translations/editor_en.ts
+
+# Ресурсы для переводов
+RESOURCES += resources.qrc
 
 # Настройки компилятора
 CONFIG += c++11

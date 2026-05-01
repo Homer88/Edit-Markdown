@@ -13,6 +13,11 @@
 #include <QInputDialog>
 #include <QFileInfo>
 #include <QToolButton>
+#include <QColorDialog>
+#include <QLocale>
+#include <QDir>
+#include <QPrinter>
+#include <QApplication>
 
 /**
  * @brief Конструктор главного окна
@@ -31,8 +36,13 @@ MainWindow::MainWindow(QWidget *parent)
     , m_isWysiwygMode(false)
     , m_isModified(false)
     , m_spellChecker(new SpellChecker("/usr/share/hunspell/ru_RU.aff", "/usr/share/hunspell/ru_RU.dic"))
+    , m_translator(new QTranslator(this))
+    , m_currentLanguage("system")
 {
-    setWindowTitle("Markdown Editor");
+    // Загружаем системный язык при запуске
+    loadTranslations("system");
+    
+    setWindowTitle(tr("Untitled.md"));
     resize(1200, 800);
     
     initUI();
@@ -271,69 +281,170 @@ void MainWindow::createMenuBar()
     QMenuBar* menuBar = this->menuBar();
     
     // Меню Файл
-    QMenu* fileMenu = menuBar->addMenu("Файл");
+    QMenu* fileMenu = menuBar->addMenu(tr("File"));
     
-    QAction* newAction = fileMenu->addAction("Новый");
+    QAction* newAction = fileMenu->addAction(tr("New"));
     newAction->setShortcut(QKeySequence::New);
     connect(newAction, &QAction::triggered, this, &MainWindow::newFile);
     
-    QAction* openAction = fileMenu->addAction("Открыть");
+    QAction* openAction = fileMenu->addAction(tr("Open..."));
     openAction->setShortcut(QKeySequence::Open);
     connect(openAction, &QAction::triggered, this, &MainWindow::openFile);
     
-    QAction* saveAction = fileMenu->addAction("Сохранить");
+    QAction* saveAction = fileMenu->addAction(tr("Save"));
     saveAction->setShortcut(QKeySequence::Save);
     connect(saveAction, &QAction::triggered, this, &MainWindow::saveFile);
     
-    QAction* saveAsAction = fileMenu->addAction("Сохранить как...");
+    QAction* saveAsAction = fileMenu->addAction(tr("Save As..."));
     saveAsAction->setShortcut(QKeySequence::SaveAs);
     connect(saveAsAction, &QAction::triggered, this, &MainWindow::saveFileAs);
     
+    QAction* exportPdfAction = fileMenu->addAction(tr("Export to PDF..."));
+    exportPdfAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_P));
+    connect(exportPdfAction, &QAction::triggered, this, [this]() {
+        QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"), "", tr("PDF Files (*.pdf)"));
+        if (!fileName.isEmpty()) {
+            if (!fileName.endsWith(".pdf")) {
+                fileName += ".pdf";
+            }
+            QPrinter printer(QPrinter::HighResolution);
+            printer.setOutputFormat(QPrinter::PdfFormat);
+            printer.setOutputFileName(fileName);
+            m_previewEditor->document()->print(&printer);
+        }
+    });
+    
     fileMenu->addSeparator();
     
-    QAction* exitAction = fileMenu->addAction("Выход");
+    QAction* exitAction = fileMenu->addAction(tr("Exit"));
     exitAction->setShortcut(QKeySequence::Quit);
     connect(exitAction, &QAction::triggered, this, &QWidget::close);
     
     // Меню Правка
-    QMenu* editMenu = menuBar->addMenu("Правка");
+    QMenu* editMenu = menuBar->addMenu(tr("Edit"));
     
-    QAction* boldAction = editMenu->addAction("Жирный");
-    boldAction->setShortcut(QKeySequence::Bold);
-    connect(boldAction, &QAction::triggered, this, &MainWindow::insertBold);
+    QAction* undoAction = editMenu->addAction(tr("Undo"));
+    undoAction->setShortcut(QKeySequence::Undo);
+    connect(undoAction, &QAction::triggered, [this]() {
+        if (m_isWysiwygMode) {
+            m_previewEditor->undo();
+        } else {
+            m_markdownEditor->undo();
+        }
+    });
     
-    QAction* italicAction = editMenu->addAction("Курсив");
-    italicAction->setShortcut(QKeySequence::Italic);
-    connect(italicAction, &QAction::triggered, this, &MainWindow::insertItalic);
+    QAction* redoAction = editMenu->addAction(tr("Redo"));
+    redoAction->setShortcut(QKeySequence::Redo);
+    connect(redoAction, &QAction::triggered, [this]() {
+        if (m_isWysiwygMode) {
+            m_previewEditor->redo();
+        } else {
+            m_markdownEditor->redo();
+        }
+    });
     
     editMenu->addSeparator();
     
-    QAction* spellCheckAction = editMenu->addAction("Проверить орфографию");
+    QAction* cutAction = editMenu->addAction(tr("Cut"));
+    cutAction->setShortcut(QKeySequence::Cut);
+    connect(cutAction, &QAction::triggered, [this]() {
+        if (m_isWysiwygMode) {
+            m_previewEditor->cut();
+        } else {
+            m_markdownEditor->cut();
+        }
+    });
+    
+    QAction* copyAction = editMenu->addAction(tr("Copy"));
+    copyAction->setShortcut(QKeySequence::Copy);
+    connect(copyAction, &QAction::triggered, [this]() {
+        if (m_isWysiwygMode) {
+            m_previewEditor->copy();
+        } else {
+            m_markdownEditor->copy();
+        }
+    });
+    
+    QAction* pasteAction = editMenu->addAction(tr("Paste"));
+    pasteAction->setShortcut(QKeySequence::Paste);
+    connect(pasteAction, &QAction::triggered, [this]() {
+        if (m_isWysiwygMode) {
+            m_previewEditor->paste();
+        } else {
+            m_markdownEditor->paste();
+        }
+    });
+    
+    editMenu->addSeparator();
+    
+    QAction* spellCheckAction = editMenu->addAction(tr("Check Spelling"));
     spellCheckAction->setShortcut(QKeySequence(Qt::Key_F7));
     connect(spellCheckAction, &QAction::triggered, this, &MainWindow::checkSpelling);
     
-    // Меню Справка
-    QMenu* helpMenu = menuBar->addMenu("Справка");
+    // Меню Вид
+    QMenu* viewMenu = menuBar->addMenu(tr("View"));
     
-    QAction* helpAction = helpMenu->addAction("Справка...");
+    m_markdownAction = viewMenu->addAction(tr("Markdown Mode"));
+    m_markdownAction->setCheckable(true);
+    m_markdownAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_1));
+    connect(m_markdownAction, &QAction::triggered, this, &MainWindow::toggleMarkdownMode);
+    
+    m_wysiwygAction = viewMenu->addAction(tr("Preview Mode"));
+    m_wysiwygAction->setCheckable(true);
+    m_wysiwygAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_2));
+    connect(m_wysiwygAction, &QAction::triggered, this, &MainWindow::toggleWysiwygMode);
+    
+    // Меню Справка
+    QMenu* helpMenu = menuBar->addMenu(tr("Help"));
+    
+    QAction* helpAction = helpMenu->addAction(tr("Help..."));
     helpAction->setShortcut(QKeySequence::HelpContents);
     connect(helpAction, &QAction::triggered, this, &MainWindow::showHelp);
     
-    QAction* aboutAction = helpMenu->addAction("О программе...");
+    // Подменю языков
+    QMenu* langMenu = helpMenu->addMenu(tr("Language"));
+    
+    QAction* sysLangAction = langMenu->addAction(tr("System Default"));
+    sysLangAction->setCheckable(true);
+    sysLangAction->setChecked(m_currentLanguage == "system");
+    connect(sysLangAction, &QAction::triggered, [this]() {
+        changeLanguage("system");
+    });
+    
+    QAction* ruLangAction = langMenu->addAction(tr("Russian"));
+    ruLangAction->setCheckable(true);
+    ruLangAction->setChecked(m_currentLanguage == "ru");
+    connect(ruLangAction, &QAction::triggered, [this]() {
+        changeLanguage("ru");
+    });
+    
+    QAction* enLangAction = langMenu->addAction(tr("English"));
+    enLangAction->setCheckable(true);
+    enLangAction->setChecked(m_currentLanguage == "en");
+    connect(enLangAction, &QAction::triggered, [this]() {
+        changeLanguage("en");
+    });
+    
+    helpMenu->addSeparator();
+    
+    QAction* aboutAction = helpMenu->addAction(tr("About..."));
     connect(aboutAction, &QAction::triggered, this, [this]() {
-        QMessageBox::about(this, "О программе",
-            "<h2>Markdown Editor</h2>"
-            "<p>Версия 1.0</p>"
-            "<p>Редактор Markdown с поддержкой WYSIWYG режима.</p>"
-            "<p><b>Возможности:</b></p>"
+        QMessageBox::about(this, tr("About"),
+            tr("<h2>Markdown Editor</h2>"
+            "<p>Version 1.0</p>"
+            "<p>A feature-rich Markdown editor built with Qt C++.</p>"
+            "<p><b>Features:</b></p>"
             "<ul>"
-            "<li>Двухрежимное редактирование (Markdown/WYSIWYG)</li>"
-            "<li>Проверка орфографии (русский/английский)</li>"
-            "<li>Работа с таблицами</li>"
-            "<li>Вставка изображений и ссылок</li>"
-            "<li>Подсветка кода</li>"
+            "<li>WYSIWYG Preview</li>"
+            "<li>Syntax Highlighting</li>"
+            "<li>Spell Checking (Russian/English)</li>"
+            "<li>Table Editing</li>"
+            "<li>Image and Link Insertion</li>"
+            "<li>Code Highlighting</li>"
+            "<li>Multi-language Support</li>"
+            "<li>PDF Export</li>"
             "</ul>"
-            "<p>Создано с использованием Qt6 и C++</p>");
+            "<p>Built using Qt and C++</p>"));
     });
 }
 
@@ -1169,4 +1280,86 @@ void MainWindow::showHelp()
 {
     HelpWindow* helpWindow = new HelpWindow(this);
     helpWindow->exec();
+}
+
+/**
+ * @brief Загрузка переводов для указанного языка
+ * @param language Код языка ("ru", "en", "system")
+ */
+void MainWindow::loadTranslations(const QString& language)
+{
+    // Определяем язык для загрузки
+    QString langToLoad = language;
+    if (language == "system") {
+        QLocale systemLocale = QLocale::system();
+        langToLoad = systemLocale.language() == QLocale::Russian ? "ru" : "en";
+    }
+    
+    // Удаляем предыдущий переводчик
+    qApp->removeTranslator(m_translator);
+    
+    // Формируем путь к файлу перевода
+    QString translationFile = ":/translations/editor_" + langToLoad + ".qm";
+    
+    // Пытаемся загрузить перевод из ресурсов
+    if (m_translator->load(translationFile)) {
+        qApp->installTranslator(m_translator);
+        m_currentLanguage = language;
+        
+        // Обновляем интерфейс после смены языка
+        createMenuBar();
+        createToolBar();
+        updateWindowTitle();
+    } else {
+        // Если файл не найден в ресурсах, пробуем загрузить из папки translations
+        QString localPath = QApplication::applicationDirPath() + "/../translations/editor_" + langToLoad + ".qm";
+        if (QFile::exists(localPath)) {
+            if (m_translator->load(localPath)) {
+                qApp->installTranslator(m_translator);
+                m_currentLanguage = language;
+                createMenuBar();
+                createToolBar();
+                updateWindowTitle();
+            }
+        }
+    }
+}
+
+/**
+ * @brief Изменение языка интерфейса
+ * @param language Код языка ("ru", "en", "system")
+ */
+void MainWindow::changeLanguage(const QString& language)
+{
+    loadTranslations(language);
+}
+
+/**
+ * @brief Изменение цвета текста
+ */
+void MainWindow::changeTextColor()
+{
+    QColor color = QColorDialog::getColor(Qt::black, this, tr("Text Color"));
+    if (color.isValid()) {
+        // В зависимости от режима применяем цвет по-разному
+        if (m_isWysiwygMode) {
+            QTextCharFormat format = m_previewEditor->currentCharFormat();
+            format.setForeground(color);
+            m_previewEditor->setCurrentCharFormat(format);
+        } else {
+            // В режиме Markdown оборачиваем выделенный текст в HTML тег
+            QTextCursor cursor = m_markdownEditor->textCursor();
+            if (cursor.hasSelection()) {
+                QString selectedText = cursor.selectedText();
+                QString formattedText = QString("<span style=\"color: %1\">%2</span>")
+                    .arg(color.name())
+                    .arg(selectedText);
+                cursor.insertText(formattedText);
+            } else {
+                // Если нет выделения, просто запоминаем цвет для следующего ввода
+                QMessageBox::information(this, tr("Text Color"), 
+                    tr("Выделите текст для изменения цвета."));
+            }
+        }
+    }
 }

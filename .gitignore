@@ -1,1 +1,33 @@
-Nothing should be ignored based on the provided file changes. The only modified file is `spellchecker.h`, which is a source code header file and should not be added to .gitignore.
+```
+# Build artifacts
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+*.cmake
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Dependencies
+vendor/
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Environment
+.env
+.env.local
+.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+```

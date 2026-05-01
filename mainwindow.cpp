@@ -1615,8 +1615,67 @@ void MainWindow::insertTable()
  */
 void MainWindow::insertTableRow()
 {
-    QString newRow = "| Новый текст  | Новый текст  | Новый текст  |\n";
-    insertMarkdownAtCursor(newRow);
+    if (m_isWysiwygMode) {
+        // В режиме WYSIWYG работаем с QTextEdit
+        QTextCursor cursor = m_previewEditor->textCursor();
+        
+        // Проверяем, находится ли курсор внутри таблицы
+        QTextBlock block = cursor.block();
+        bool inTable = false;
+        
+        // Ищем таблицу, проверяя HTML структуру
+        QString blockText = block.text();
+        if (blockText.contains("<table") || blockText.contains("<tr") || blockText.contains("<td") || blockText.contains("<th")) {
+            inTable = true;
+        }
+        
+        if (!inTable) {
+            QMessageBox::information(this, tr("Information"), tr("Cursor must be inside a table"));
+            return;
+        }
+        
+        // Создаем новую строку таблицы
+        QString newRowHtml = "<tr><td>Новый текст</td><td>Новый текст</td><td>Новый текст</td></tr>";
+        
+        // Находим текущую строку таблицы и вставляем после неё
+        cursor.beginEditBlock();
+        
+        // Перемещаемся к началу текущей строки <tr>
+        int pos = cursor.position();
+        int startOfRow = -1;
+        
+        // Ищем начало тега <tr> перед позицией курсора
+        QString html = m_previewEditor->toHtml();
+        int searchPos = pos;
+        while (searchPos > 0) {
+            searchPos = html.lastIndexOf("<tr", searchPos - 1);
+            if (searchPos >= 0) {
+                startOfRow = searchPos;
+                break;
+            }
+        }
+        
+        if (startOfRow >= 0) {
+            // Находим конец этой строки </tr>
+            int endOfRow = html.indexOf("</tr>", startOfRow);
+            if (endOfRow >= 0) {
+                endOfRow += 5; // Длина "</tr>"
+                cursor.setPosition(endOfRow);
+                cursor.insertHtml(newRowHtml);
+            }
+        } else {
+            // Если не нашли, просто вставляем в текущую позицию
+            cursor.insertHtml(newRowHtml);
+        }
+        
+        cursor.endEditBlock();
+        m_previewEditor->setTextCursor(cursor);
+        m_previewEditor->setFocus();
+    } else {
+        // В режиме Markdown вставляем Markdown строку
+        QString newRow = "| Новый текст  | Новый текст  | Новый текст  |\n";
+        insertMarkdownAtCursor(newRow);
+    }
 }
 
 /**
@@ -1625,76 +1684,132 @@ void MainWindow::insertTableRow()
  */
 void MainWindow::insertTableColumn()
 {
-    QPlainTextEdit* editor = m_markdownEditor;
-    QString text = editor->toPlainText();
-    int cursorPos = editor->textCursor().position();
-    
-    // Находим строку с курсором
-    QTextCursor cursor = editor->textCursor();
-    cursor.select(QTextCursor::BlockUnderCursor);
-    QString currentLine = cursor.selectedText();
-    
-    // Проверяем, находится ли курсор в таблице
-    if (!currentLine.contains("|")) {
-        // Если не в таблице, просто вставляем подсказку
-        insertMarkdownAtCursor("\n| Новый столбец |\n");
-        return;
-    }
-    
-    // Разбиваем текст на строки
-    QStringList lines = text.split("\n");
-    int currentLineNum = text.left(cursorPos).count("\n");
-    
-    bool inTable = false;
-    int tableStartLine = -1;
-    
-    // Ищем начало таблицы
-    for (int i = currentLineNum; i >= 0; --i) {
-        if (i < lines.size() && lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
-            if (!inTable) {
-                tableStartLine = i;
-                inTable = true;
-            }
-        } else if (inTable) {
-            break;
+    if (m_isWysiwygMode) {
+        // В режиме WYSIWYG работаем с QTextEdit
+        QTextCursor cursor = m_previewEditor->textCursor();
+        
+        // Проверяем, находится ли курсор внутри таблицы
+        QTextBlock block = cursor.block();
+        bool inTable = false;
+        
+        QString blockText = block.text();
+        if (blockText.contains("<table") || blockText.contains("<tr") || blockText.contains("<td") || blockText.contains("<th")) {
+            inTable = true;
         }
-    }
-    
-    if (!inTable) {
-        insertMarkdownAtCursor(" | Новый столбец");
-        return;
-    }
-    
-    // Ищем конец таблицы
-    int tableEndLine = tableStartLine;
-    for (int i = tableStartLine; i < lines.size(); ++i) {
-        if (lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
-            tableEndLine = i;
-        } else {
-            break;
+        
+        if (!inTable) {
+            QMessageBox::information(this, tr("Information"), tr("Cursor must be inside a table"));
+            return;
         }
-    }
-    
-    // Добавляем новый столбец к каждой строке таблицы
-    for (int i = tableStartLine; i <= tableEndLine; ++i) {
-        if (lines[i].trimmed().startsWith("|")) {
-            // Вставляем новый столбец перед последней вертикальной чертой
-            int lastPipePos = lines[i].lastIndexOf('|');
-            if (lastPipePos > 0) {
-                lines[i] = lines[i].left(lastPipePos) + " Новый столбец |" + lines[i].mid(lastPipePos + 1);
+        
+        // Получаем всю таблицу и добавляем столбец к каждой строке
+        QString html = m_previewEditor->toHtml();
+        
+        // Находим все строки <tr>...</tr> и добавляем новую ячейку
+        int pos = 0;
+        while (true) {
+            int trStart = html.indexOf("<tr", pos);
+            if (trStart < 0) break;
+            
+            int trEnd = html.indexOf("</tr>", trStart);
+            if (trEnd < 0) break;
+            trEnd += 5; // Длина "</tr>"
+            
+            // Проверяем, есть ли уже ячейки в этой строке
+            QString rowContent = html.mid(trStart, trEnd - trStart);
+            if (rowContent.contains("<td") || rowContent.contains("<th")) {
+                // Находим позицию перед </tr> и вставляем новую ячейку
+                int insertPos = trEnd - 5; // Позиция перед "</tr>"
+                QString newCell = "<td>Новый столбец</td>";
+                html = html.left(insertPos) + newCell + html.mid(insertPos);
+                
+                // Корректируем позицию для следующей итерации
+                pos = trEnd + newCell.length();
             } else {
-                lines[i] += " Новый столбец |";
+                pos = trEnd;
             }
         }
+        
+        // Обновляем HTML документа
+        cursor.beginEditBlock();
+        m_previewEditor->setHtml(html);
+        cursor.endEditBlock();
+        
+        m_previewEditor->setTextCursor(cursor);
+        m_previewEditor->setFocus();
+    } else {
+        // В режиме Markdown работаем как раньше
+        QPlainTextEdit* editor = m_markdownEditor;
+        QString text = editor->toPlainText();
+        int cursorPos = editor->textCursor().position();
+        
+        // Находим строку с курсором
+        QTextCursor cursor = editor->textCursor();
+        cursor.select(QTextCursor::BlockUnderCursor);
+        QString currentLine = cursor.selectedText();
+        
+        // Проверяем, находится ли курсор в таблице
+        if (!currentLine.contains("|")) {
+            // Если не в таблице, просто вставляем подсказку
+            insertMarkdownAtCursor("\n| Новый столбец |\n");
+            return;
+        }
+        
+        // Разбиваем текст на строки
+        QStringList lines = text.split("\n");
+        int currentLineNum = text.left(cursorPos).count("\n");
+        
+        bool inTable = false;
+        int tableStartLine = -1;
+        
+        // Ищем начало таблицы
+        for (int i = currentLineNum; i >= 0; --i) {
+            if (i < lines.size() && lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+                if (!inTable) {
+                    tableStartLine = i;
+                    inTable = true;
+                }
+            } else if (inTable) {
+                break;
+            }
+        }
+        
+        if (!inTable) {
+            insertMarkdownAtCursor(" | Новый столбец");
+            return;
+        }
+        
+        // Ищем конец таблицы
+        int tableEndLine = tableStartLine;
+        for (int i = tableStartLine; i < lines.size(); ++i) {
+            if (lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+                tableEndLine = i;
+            } else {
+                break;
+            }
+        }
+        
+        // Добавляем новый столбец к каждой строке таблицы
+        for (int i = tableStartLine; i <= tableEndLine; ++i) {
+            if (lines[i].trimmed().startsWith("|")) {
+                // Вставляем новый столбец перед последней вертикальной чертой
+                int lastPipePos = lines[i].lastIndexOf('|');
+                if (lastPipePos > 0) {
+                    lines[i] = lines[i].left(lastPipePos) + " Новый столбец |" + lines[i].mid(lastPipePos + 1);
+                } else {
+                    lines[i] += " Новый столбец |";
+                }
+            }
+        }
+        
+        // Обновляем текст
+        editor->setPlainText(lines.join("\n"));
+        
+        // Восстанавливаем позицию курсора
+        QTextCursor newCursor = editor->textCursor();
+        newCursor.setPosition(cursorPos);
+        editor->setTextCursor(newCursor);
     }
-    
-    // Обновляем текст
-    editor->setPlainText(lines.join("\n"));
-    
-    // Восстанавливаем позицию курсора
-    QTextCursor newCursor = editor->textCursor();
-    newCursor.setPosition(cursorPos);
-    editor->setTextCursor(newCursor);
 }
 
 /**
@@ -1703,25 +1818,73 @@ void MainWindow::insertTableColumn()
  */
 void MainWindow::deleteTableRow()
 {
-    QPlainTextEdit* editor = m_markdownEditor;
-    QTextCursor cursor = editor->textCursor();
-    
-    // Выделяем всю строку
-    cursor.select(QTextCursor::BlockUnderCursor);
-    QString currentLine = cursor.selectedText();
-    
-    // Проверяем, находится ли курсор в таблице
-    if (!currentLine.contains("|")) {
-        QMessageBox::information(this, "Информация", "Курсор должен находиться в строке таблицы");
-        return;
-    }
-    
-    // Удаляем строку
-    cursor.removeSelectedText();
-    
-    // Удаляем символ новой строки если он есть
-    if (cursor.position() < editor->toPlainText().length()) {
-        cursor.deleteChar();
+    if (m_isWysiwygMode) {
+        // В режиме WYSIWYG работаем с QTextEdit
+        QTextCursor cursor = m_previewEditor->textCursor();
+        
+        // Проверяем, находится ли курсор внутри таблицы
+        QTextBlock block = cursor.block();
+        bool inTable = false;
+        
+        QString blockText = block.text();
+        if (blockText.contains("<table") || blockText.contains("<tr") || blockText.contains("<td") || blockText.contains("<th")) {
+            inTable = true;
+        }
+        
+        if (!inTable) {
+            QMessageBox::information(this, tr("Information"), tr("Cursor must be inside a table"));
+            return;
+        }
+        
+        // Находим текущую строку <tr> и удаляем её
+        QString html = m_previewEditor->toHtml();
+        int pos = cursor.position();
+        
+        // Ищем начало <tr> перед позицией курсора
+        int trStart = html.lastIndexOf("<tr", pos);
+        if (trStart < 0) {
+            QMessageBox::information(this, tr("Information"), tr("Could not find table row"));
+            return;
+        }
+        
+        // Ищем конец </tr>
+        int trEnd = html.indexOf("</tr>", trStart);
+        if (trEnd < 0) {
+            QMessageBox::information(this, tr("Information"), tr("Could not find table row end"));
+            return;
+        }
+        trEnd += 5; // Длина "</tr>"
+        
+        // Удаляем строку
+        cursor.beginEditBlock();
+        html = html.left(trStart) + html.mid(trEnd);
+        m_previewEditor->setHtml(html);
+        cursor.endEditBlock();
+        
+        m_previewEditor->setTextCursor(cursor);
+        m_previewEditor->setFocus();
+    } else {
+        // В режиме Markdown работаем как раньше
+        QPlainTextEdit* editor = m_markdownEditor;
+        QTextCursor cursor = editor->textCursor();
+        
+        // Выделяем всю строку
+        cursor.select(QTextCursor::BlockUnderCursor);
+        QString currentLine = cursor.selectedText();
+        
+        // Проверяем, находится ли курсор в таблице
+        if (!currentLine.contains("|")) {
+            QMessageBox::information(this, "Информация", "Курсор должен находиться в строке таблицы");
+            return;
+        }
+        
+        // Удаляем строку
+        cursor.removeSelectedText();
+        
+        // Удаляем символ новой строки если он есть
+        if (cursor.position() < editor->toPlainText().length()) {
+            cursor.deleteChar();
+        }
     }
 }
 
@@ -1793,60 +1956,125 @@ void MainWindow::deleteTable()
  */
 void MainWindow::deleteTableColumn()
 {
-    QPlainTextEdit* editor = m_markdownEditor;
-    QString text = editor->toPlainText();
-    int cursorPos = editor->textCursor().position();
-    
-    // Разбиваем текст на строки
-    QStringList lines = text.split("\n");
-    int currentLineNum = text.left(cursorPos).count("\n");
-    
-    bool inTable = false;
-    int tableStartLine = -1;
-    
-    // Ищем начало таблицы
-    for (int i = currentLineNum; i >= 0; --i) {
-        if (i < lines.size() && lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
-            if (!inTable) {
-                tableStartLine = i;
-                inTable = true;
+    if (m_isWysiwygMode) {
+        // В режиме WYSIWYG работаем с QTextEdit
+        QTextCursor cursor = m_previewEditor->textCursor();
+        
+        // Проверяем, находится ли курсор внутри таблицы
+        QTextBlock block = cursor.block();
+        bool inTable = false;
+        
+        QString blockText = block.text();
+        if (blockText.contains("<table") || blockText.contains("<tr") || blockText.contains("<td") || blockText.contains("<th")) {
+            inTable = true;
+        }
+        
+        if (!inTable) {
+            QMessageBox::information(this, tr("Information"), tr("Cursor must be inside a table"));
+            return;
+        }
+        
+        // Получаем весь HTML и удаляем последнюю ячейку из каждой строки
+        QString html = m_previewEditor->toHtml();
+        
+        // Находим все строки <tr>...</tr> и удаляем последнюю ячейку
+        int pos = 0;
+        while (true) {
+            int trStart = html.indexOf("<tr", pos);
+            if (trStart < 0) break;
+            
+            int trEnd = html.indexOf("</tr>", trStart);
+            if (trEnd < 0) break;
+            trEnd += 5; // Длина "</tr>"
+            
+            // Находим последнюю ячейку </td> или </th> перед </tr>
+            int lastTdEnd = html.lastIndexOf("</td>", trEnd);
+            int lastThEnd = html.lastIndexOf("</th>", trEnd);
+            int lastCellEnd = qMax(lastTdEnd, lastThEnd);
+            
+            if (lastCellEnd >= trStart && lastCellEnd < trEnd) {
+                // Находим начало этой ячейки
+                int cellStart = html.lastIndexOf("<td", lastCellEnd);
+                int thStart = html.lastIndexOf("<th", lastCellEnd);
+                int cellStartPos = qMax(cellStart, thStart);
+                
+                if (cellStartPos >= trStart) {
+                    // Удаляем ячейку
+                    html = html.left(cellStartPos) + html.mid(lastCellEnd + (html.mid(lastCellEnd, 6) == "</td>" ? 5 : 5));
+                    // Корректируем позицию для следующей итерации
+                    pos = trStart;
+                } else {
+                    pos = trEnd;
+                }
+            } else {
+                pos = trEnd;
             }
-        } else if (inTable) {
-            break;
         }
-    }
-    
-    if (!inTable) {
-        QMessageBox::information(this, "Информация", "Курсор должен находиться в таблице");
-        return;
-    }
-    
-    // Ищем конец таблицы
-    int tableEndLine = tableStartLine;
-    for (int i = tableStartLine; i < lines.size(); ++i) {
-        if (lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
-            tableEndLine = i;
-        } else {
-            break;
+        
+        // Обновляем HTML документа
+        cursor.beginEditBlock();
+        m_previewEditor->setHtml(html);
+        cursor.endEditBlock();
+        
+        m_previewEditor->setTextCursor(cursor);
+        m_previewEditor->setFocus();
+    } else {
+        // В режиме Markdown работаем как раньше
+        QPlainTextEdit* editor = m_markdownEditor;
+        QString text = editor->toPlainText();
+        int cursorPos = editor->textCursor().position();
+        
+        // Разбиваем текст на строки
+        QStringList lines = text.split("\n");
+        int currentLineNum = text.left(cursorPos).count("\n");
+        
+        bool inTable = false;
+        int tableStartLine = -1;
+        
+        // Ищем начало таблицы
+        for (int i = currentLineNum; i >= 0; --i) {
+            if (i < lines.size() && lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+                if (!inTable) {
+                    tableStartLine = i;
+                    inTable = true;
+                }
+            } else if (inTable) {
+                break;
+            }
         }
-    }
-    
-    // Удаляем последний столбец из каждой строки таблицы
-    for (int i = tableStartLine; i <= tableEndLine; ++i) {
-        if (lines[i].trimmed().startsWith("|")) {
-            // Находим предпоследнюю вертикальную черту
-            int lastPipePos = lines[i].lastIndexOf('|');
-            if (lastPipePos > 0) {
-                int secondLastPipePos = lines[i].lastIndexOf('|', lastPipePos - 1);
-                if (secondLastPipePos > 0) {
-                    lines[i] = lines[i].left(secondLastPipePos) + lines[i].mid(lastPipePos);
+        
+        if (!inTable) {
+            QMessageBox::information(this, "Информация", "Курсор должен находиться в таблице");
+            return;
+        }
+        
+        // Ищем конец таблицы
+        int tableEndLine = tableStartLine;
+        for (int i = tableStartLine; i < lines.size(); ++i) {
+            if (lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+                tableEndLine = i;
+            } else {
+                break;
+            }
+        }
+        
+        // Удаляем последний столбец из каждой строки таблицы
+        for (int i = tableStartLine; i <= tableEndLine; ++i) {
+            if (lines[i].trimmed().startsWith("|")) {
+                // Находим предпоследнюю вертикальную черту
+                int lastPipePos = lines[i].lastIndexOf('|');
+                if (lastPipePos > 0) {
+                    int secondLastPipePos = lines[i].lastIndexOf('|', lastPipePos - 1);
+                    if (secondLastPipePos > 0) {
+                        lines[i] = lines[i].left(secondLastPipePos) + lines[i].mid(lastPipePos);
+                    }
                 }
             }
         }
+        
+        // Обновляем текст
+        editor->setPlainText(lines.join("\n"));
     }
-    
-    // Обновляем текст
-    editor->setPlainText(lines.join("\n"));
 }
 
 /**

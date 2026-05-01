@@ -164,6 +164,11 @@ private slots:
     void deleteTableRow();
     
     /**
+     * @brief Удаление всей таблицы
+     */
+    void deleteTable();
+    
+    /**
      * @brief Удаление столбца из таблицы
      */
     void deleteTableColumn();

@@ -866,6 +866,12 @@ void MainWindow::toggleWysiwygMode()
     m_previewEditor->setReadOnly(false);
     m_previewEditor->setFocus();
     
+    // Устанавливаем размеры сплиттера так, чтобы previewEditor занимал всё пространство
+    QSplitter* splitter = qobject_cast<QSplitter*>(m_markdownEditor->parentWidget());
+    if (splitter) {
+        splitter->setSizes(QList<int>() << 0 << splitter->width());
+    }
+    
     m_currentEditor = m_previewEditor;
     m_statusBar->showMessage("Режим WYSIWYG");
 }
@@ -888,6 +894,12 @@ void MainWindow::toggleMarkdownMode()
     m_previewEditor->hide();
     m_markdownEditor->show();
     m_markdownEditor->setFocus();
+    
+    // Восстанавливаем размеры сплиттера (50/50)
+    QSplitter* splitter = qobject_cast<QSplitter*>(m_markdownEditor->parentWidget());
+    if (splitter) {
+        splitter->setSizes(QList<int>() << splitter->width() / 2 << splitter->width() / 2);
+    }
     
     m_currentEditor = m_markdownEditor;
     m_statusBar->showMessage("Режим Markdown");
@@ -1330,6 +1342,68 @@ void MainWindow::deleteTableRow()
 }
 
 /**
+ * @brief Удаление всей таблицы
+ * Удаляет всю таблицу, в которой находится курсор
+ */
+void MainWindow::deleteTable()
+{
+    QPlainTextEdit* editor = m_markdownEditor;
+    QString text = editor->toPlainText();
+    int cursorPos = editor->textCursor().position();
+    
+    // Разбиваем текст на строки
+    QStringList lines = text.split("\n");
+    int currentLineNum = text.left(cursorPos).count("\n");
+    
+    bool inTable = false;
+    int tableStartLine = -1;
+    
+    // Ищем начало таблицы
+    for (int i = currentLineNum; i >= 0; --i) {
+        if (i < lines.size() && lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+            if (!inTable) {
+                tableStartLine = i;
+                inTable = true;
+            }
+        } else if (inTable) {
+            break;
+        }
+    }
+    
+    if (!inTable) {
+        QMessageBox::information(this, "Информация", "Курсор должен находиться в таблице");
+        return;
+    }
+    
+    // Ищем конец таблицы
+    int tableEndLine = tableStartLine;
+    for (int i = tableStartLine; i < lines.size(); ++i) {
+        if (lines[i].trimmed().startsWith("|") && lines[i].contains("|")) {
+            tableEndLine = i;
+        } else if (inTable) {
+            break;
+        }
+    }
+    
+    // Вычисляем позиции для удаления
+    int startPos = 0;
+    for (int i = 0; i < tableStartLine; ++i) {
+        startPos += lines[i].length() + 1;
+    }
+    
+    int endPos = startPos;
+    for (int i = tableStartLine; i <= tableEndLine; ++i) {
+        endPos += lines[i].length() + 1;
+    }
+    
+    // Удаляем таблицу
+    QTextCursor cursor = editor->textCursor();
+    cursor.setPosition(startPos);
+    cursor.setPosition(endPos, QTextCursor::KeepAnchor);
+    cursor.removeSelectedText();
+}
+
+/**
  * @brief Удаление столбца из таблицы
  * Удаляет последний столбец из всех строк таблицы
  */
@@ -1658,6 +1732,20 @@ void MainWindow::showEditorContextMenu(const QPoint& pos)
     QAction* selectAllAction = contextMenu.addAction(tr("Выделить всё"));
     selectAllAction->setShortcut(QKeySequence::SelectAll);
     connect(selectAllAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::selectAll);
+    
+    // --- Table Operations Submenu ---
+    contextMenu.addSeparator();
+    QMenu *tableMenu = contextMenu.addMenu(tr("Table"));
+    
+    QAction *insertTableAction = tableMenu->addAction(tr("Insert Table"));
+    connect(insertTableAction, &QAction::triggered, this, [this]() {
+        insertTable();
+    });
+
+    QAction *deleteTableAction = tableMenu->addAction(tr("Delete Table"));
+    connect(deleteTableAction, &QAction::triggered, this, [this]() {
+        deleteTable();
+    });
     
     // Показываем меню в позиции курсора
     QWidget* editor = qobject_cast<QWidget*>(sender());

@@ -184,6 +184,9 @@ void MainWindow::initUI()
     m_markdownEditor->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_markdownEditor, &QPlainTextEdit::customContextMenuRequested, this, &MainWindow::showEditorContextMenu);
     
+    // Инициализация подсветки синтаксиса Markdown
+    m_highlighter = new MarkdownHighlighter(m_markdownEditor->document());
+    
     // Создаем редактор предпросмотра (WYSIWYG)
     m_previewEditor = new QTextEdit(splitter);
     m_previewEditor->setReadOnly(true);
@@ -2687,18 +2690,18 @@ void MainWindow::showLinkPropertiesDialog()
     connect(cancelButton, &QPushButton::clicked, &linkDialog, &QDialog::reject);
     
     if (deleteButton) {
-        connect(deleteButton, &QPushButton::clicked, &linkDialog, [&linkDialog, this, &cursor]() {
+        connect(deleteButton, &QPushButton::clicked, &linkDialog, [&linkDialog, this]() {
             // Удаляем ссылку
             if (m_isWysiwygMode) {
-                QTextCursor cursor = m_previewEditor->textCursor();
+                QTextCursor textCursor = m_previewEditor->textCursor();
                 QTextCharFormat format;
                 format.setAnchor(false);
                 format.setAnchorHref("");
-                cursor.setCharFormat(format);
-                m_previewEditor->setTextCursor(cursor);
+                textCursor.setCharFormat(format);
+                m_previewEditor->setTextCursor(textCursor);
             } else {
-                QTextCursor cursor = m_markdownEditor->textCursor();
-                int pos = cursor.position();
+                QTextCursor textCursor = m_markdownEditor->textCursor();
+                int pos = textCursor.position();
                 QString text = m_markdownEditor->toPlainText();
                 
                 QRegularExpression linkRegex("\\[([^\\]]+)\\]\\(([^)]+)\\)");
@@ -2710,10 +2713,10 @@ void MainWindow::showLinkPropertiesDialog()
                     int matchEnd = match.capturedEnd();
                     
                     if (pos >= matchStart && pos <= matchEnd) {
-                        cursor.setPosition(matchStart);
-                        cursor.setPosition(matchEnd, QTextCursor::KeepAnchor);
-                        cursor.removeSelectedText();
-                        cursor.insertText(match.captured(1));
+                        textCursor.setPosition(matchStart);
+                        textCursor.setPosition(matchEnd, QTextCursor::KeepAnchor);
+                        textCursor.removeSelectedText();
+                        textCursor.insertText(match.captured(1));
                         break;
                     }
                 }

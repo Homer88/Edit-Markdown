@@ -17,6 +17,7 @@
 #include "spellchecker.h"
 #include "helpwindow.h"
 #include "settings_dialog.h"
+#include "markdownhighlighter.h"
 
 /**
  * @class LineNumberArea
@@ -392,6 +393,7 @@ private:
     QTextEdit* m_previewEditor;        ///< Виджет предпросмотра (WYSIWYG)
     PlainTextEditWithLineNumbers* m_markdownEditor;  ///< Виджет редактора Markdown с нумерацией строк
     QWidget* m_currentEditor;          ///< Текущий активный редактор
+    MarkdownHighlighter* m_highlighter; ///< Подсветка синтаксиса Markdown
     
     // Парсер Markdown
     MarkdownParser* m_parser;          ///< Парсер для конвертации Markdown в HTML

@@ -211,6 +211,12 @@ private slots:
      */
     void changeTextColor();
     
+    /**
+     * @brief Конвертировать файл в указанную кодировку
+     * @param codecName Название кодировки (например, "UTF-8", "Windows-1251")
+     */
+    void convertEncoding(const QString& codecName);
+    
 private:
     /**
      * @brief Инициализация пользовательского интерфейса

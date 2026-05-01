@@ -20,6 +20,8 @@
 #include <QApplication>
 #include <QCoreApplication>
 #include <QStandardPaths>
+#include <QTextCodec>
+#include <QTextStream>
 
 /**
  * @brief Конструктор главного окна
@@ -428,6 +430,126 @@ void MainWindow::createMenuBar()
     enLangAction->setChecked(m_currentLanguage == "en");
     connect(enLangAction, &QAction::triggered, [this]() {
         changeLanguage("en");
+    });
+    
+    // Меню Кодировка
+    QMenu* encodingMenu = menuBar->addMenu(tr("Encoding"));
+    
+    // Автоопределение кодировки
+    QAction* autoDetectAction = encodingMenu->addAction(tr("Auto Detect"));
+    autoDetectAction->setToolTip(tr("Автоматически определить кодировку файла"));
+    connect(autoDetectAction, &QAction::triggered, [this]() {
+        if (!m_currentFile.isEmpty()) {
+            QFile file(m_currentFile);
+            if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                QTextStream in(&file);
+                in.setAutoDetectUnicode(true);
+                QByteArray bom = file.peek(4);
+                if (bom.startsWith(QByteArray::fromHex("EFBBBF"))) {
+                    in.setCodec("UTF-8");
+                } else if (bom.startsWith(QByteArray::fromHex("FFFE0000")) || bom.startsWith(QByteArray::fromHex("0000FEFF"))) {
+                    in.setCodec("UTF-32");
+                } else if (bom.startsWith(QByteArray::fromHex("FFFE")) || bom.startsWith(QByteArray::fromHex("FEFF"))) {
+                    in.setCodec("UTF-16");
+                } else {
+                    in.setAutoDetectUnicode(true);
+                }
+                QString content = in.readAll();
+                file.close();
+                m_markdownEditor->setPlainText(content);
+                m_statusBar->showMessage(tr("Кодировка определена автоматически: ") + in.codec()->name());
+            }
+        } else {
+            m_statusBar->showMessage(tr("Сначала откройте файл"));
+        }
+    });
+    
+    encodingMenu->addSeparator();
+    
+    // Популярные кодировки
+    QAction* utf8Action = encodingMenu->addAction("UTF-8");
+    utf8Action->setToolTip(tr("Конвертировать в UTF-8"));
+    connect(utf8Action, &QAction::triggered, [this]() {
+        convertEncoding("UTF-8");
+    });
+    
+    QAction* utf8BomAction = encodingMenu->addAction("UTF-8 with BOM");
+    utf8BomAction->setToolTip(tr("Конвертировать в UTF-8 с BOM"));
+    connect(utf8BomAction, &QAction::triggered, [this]() {
+        convertEncoding("UTF-8");
+    });
+    
+    QAction* asciiAction = encodingMenu->addAction("ASCII");
+    asciiAction->setToolTip(tr("Конвертировать в ASCII"));
+    connect(asciiAction, &QAction::triggered, [this]() {
+        convertEncoding("ASCII");
+    });
+    
+    encodingMenu->addSeparator();
+    
+    // Кириллические кодировки
+    QMenu* cyrillicMenu = encodingMenu->addMenu(tr("Cyrillic"));
+    
+    QAction* win1251Action = cyrillicMenu->addAction("Windows-1251");
+    connect(win1251Action, &QAction::triggered, [this]() {
+        convertEncoding("Windows-1251");
+    });
+    
+    QAction* koi8rAction = cyrillicMenu->addAction("KOI8-R");
+    connect(koi8rAction, &QAction::triggered, [this]() {
+        convertEncoding("KOI8-R");
+    });
+    
+    QAction* cp866Action = cyrillicMenu->addAction("CP866");
+    connect(cp866Action, &QAction::triggered, [this]() {
+        convertEncoding("CP866");
+    });
+    
+    QAction* iso88595Action = cyrillicMenu->addAction("ISO 8859-5");
+    connect(iso88595Action, &QAction::triggered, [this]() {
+        convertEncoding("ISO 8859-5");
+    });
+    
+    encodingMenu->addSeparator();
+    
+    // Другие популярные кодировки
+    QMenu* otherMenu = encodingMenu->addMenu(tr("Other"));
+    
+    QAction* latin1Action = otherMenu->addAction("ISO 8859-1 (Latin-1)");
+    connect(latin1Action, &QAction::triggered, [this]() {
+        convertEncoding("ISO 8859-1");
+    });
+    
+    QAction* latin9Action = otherMenu->addAction("ISO 8859-15 (Latin-9)");
+    connect(latin9Action, &QAction::triggered, [this]() {
+        convertEncoding("ISO 8859-15");
+    });
+    
+    QAction* utf16Action = otherMenu->addAction("UTF-16");
+    connect(utf16Action, &QAction::triggered, [this]() {
+        convertEncoding("UTF-16");
+    });
+    
+    QAction* utf32Action = otherMenu->addAction("UTF-32");
+    connect(utf32Action, &QAction::triggered, [this]() {
+        convertEncoding("UTF-32");
+    });
+    
+    encodingMenu->addSeparator();
+    
+    // Выбор произвольной кодировки
+    QAction* customAction = encodingMenu->addAction(tr("Custom Encoding..."));
+    customAction->setToolTip(tr("Выбрать кодировку из списка"));
+    connect(customAction, &QAction::triggered, [this]() {
+        bool ok;
+        QStringList codecs = {"UTF-8", "UTF-16", "UTF-32", "Windows-1251", "Windows-1252", 
+                              "KOI8-R", "KOI8-U", "CP866", "ISO 8859-1", "ISO 8859-5", 
+                              "ISO 8859-15", "ASCII", "Shift_JIS", "GB18030", "Big5"};
+        QString codecName = QInputDialog::getItem(this, tr("Выберите кодировку"),
+                                                   tr("Кодировка:"), codecs, 0, false, &ok);
+        if (ok && !codecName.isEmpty()) {
+            convertEncoding(codecName);
+        }
     });
     
     helpMenu->addSeparator();
@@ -1516,4 +1638,74 @@ void MainWindow::changeTextColor()
             }
         }
     }
+}
+
+/**
+ * @brief Конвертировать файл в указанную кодировку
+ */
+void MainWindow::convertEncoding(const QString& codecName)
+{
+    if (m_currentFile.isEmpty()) {
+        QMessageBox::warning(this, tr("Ошибка"), tr("Сначала откройте файл для конвертации кодировки."));
+        return;
+    }
+    
+    // Читаем текущий текст из редактора (он уже в Unicode)
+    QString content = m_markdownEditor->toPlainText();
+    
+    // Конвертируем текст в целевую кодировку и обратно для проверки
+    QTextCodec* codec = QTextCodec::codecForName(codecName.toUtf8());
+    if (!codec) {
+        QMessageBox::critical(this, tr("Ошибка"), 
+            tr("Не удалось найти кодировку: %1").arg(codecName));
+        return;
+    }
+    
+    // Проверяем, можно ли сконвертировать текст в эту кодировку
+    QByteArray encodedData = codec->fromUnicode(content);
+    QString decodedContent = codec->toUnicode(encodedData);
+    
+    // Предупреждаем о возможной потере данных
+    if (decodedContent != content) {
+        QMessageBox::StandardButton reply = QMessageBox::warning(
+            this,
+            tr("Предупреждение"),
+            tr("При конвертации в кодировку %1 возможна потеря данных "
+               "(некоторые символы могут быть заменены или утеряны).\n\n"
+               "Продолжить?").arg(codecName),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No
+        );
+        
+        if (reply == QMessageBox::No) {
+            return;
+        }
+    }
+    
+    // Сохраняем файл в новой кодировке
+    QFile file(m_currentFile);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Ошибка"), tr("Не удалось сохранить файл."));
+        return;
+    }
+    
+    QTextStream out(&file);
+    out.setCodec(codecName.toUtf8());
+    
+    // Добавляем BOM для UTF-8, UTF-16, UTF-32
+    if (codecName.contains("UTF-8", Qt::CaseInsensitive)) {
+        out.setGenerateByteOrderMark(true);
+    } else if (codecName.contains("UTF-16", Qt::CaseInsensitive)) {
+        out.setGenerateByteOrderMark(true);
+    } else if (codecName.contains("UTF-32", Qt::CaseInsensitive)) {
+        out.setGenerateByteOrderMark(true);
+    }
+    
+    out << content;
+    file.close();
+    
+    m_statusBar->showMessage(tr("Файл конвертирован в кодировку: ") + codecName);
+    
+    // Перечитываем файл чтобы убедиться что всё корректно
+    openFile();
 }

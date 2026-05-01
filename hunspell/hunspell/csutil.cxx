@@ -78,16 +78,10 @@
 #include <ctype.h>
 #include <sstream>
 
-#include "csutil.hxx"
 #include "atypes.hxx"
 #include "langnum.hxx"
-
-// Unicode character encoding information
-struct unicode_info {
-  unsigned short c;
-  unsigned short cupper;
-  unsigned short clower;
-};
+// csutil.hxx уже включает определение unicode_info, не переопределяем его здесь
+#include "csutil.hxx"
 
 #ifdef _WIN32
 #include <windows.h>

@@ -7,39 +7,13 @@
 *.so
 *.a
 *.out
-
+moc_*.cpp
 # Dependencies
-venv/
-.venv/
-node_modules/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-dist/
-build/
-target/
-.gradle/
-
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-
 # Editors
 .vscode/
 .idea/
-
-# Environment
-.env
-.env.local
-*.env.*
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# System files
-.DS_Store
-Thumbs.db
 ```

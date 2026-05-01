@@ -2006,6 +2006,14 @@ void MainWindow::showEditorContextMenu(const QPoint& pos)
     selectAllAction->setShortcut(QKeySequence::SelectAll);
     connect(selectAllAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::selectAll);
     
+    // Добавляем пункт "Сделать ссылкой" если текст выделен
+    QString selectedText = m_markdownEditor->textCursor().selectedText();
+    if (!selectedText.isEmpty()) {
+        contextMenu.addSeparator();
+        QAction* makeLinkAction = contextMenu.addAction(tr("Сделать ссылкой"));
+        connect(makeLinkAction, &QAction::triggered, this, &MainWindow::makeSelectedTextLink);
+    }
+    
     // --- Table Operations Submenu ---
     contextMenu.addSeparator();
     QMenu *tableMenu = contextMenu.addMenu(tr("Table"));
@@ -2024,6 +2032,71 @@ void MainWindow::showEditorContextMenu(const QPoint& pos)
     QWidget* editor = qobject_cast<QWidget*>(sender());
     if (editor) {
         contextMenu.exec(editor->mapToGlobal(pos));
+    }
+}
+
+/**
+ * @brief Сделать выделенный текст ссылкой
+ */
+void MainWindow::makeSelectedTextLink()
+{
+    QTextCursor cursor = m_markdownEditor->textCursor();
+    QString selectedText = cursor.selectedText();
+    
+    if (selectedText.isEmpty()) {
+        return;
+    }
+    
+    // Создаем диалог для ввода ссылки
+    QDialog linkDialog(this);
+    linkDialog.setWindowTitle(tr("Добавление ссылки"));
+    linkDialog.setMinimumWidth(400);
+    
+    QVBoxLayout* layout = new QVBoxLayout(&linkDialog);
+    
+    QLabel* textLabel = new QLabel(tr("Текст ссылки:"), &linkDialog);
+    QLineEdit* textEdit = new QLineEdit(selectedText, &linkDialog);
+    
+    QLabel* urlLabel = new QLabel(tr("URL или путь к файлу:"), &linkDialog);
+    QHBoxLayout* urlLayout = new QHBoxLayout();
+    QLineEdit* urlEdit = new QLineEdit(&linkDialog);
+    QPushButton* browseButton = new QPushButton(tr("Обзор..."), &linkDialog);
+    urlLayout->addWidget(urlEdit);
+    urlLayout->addWidget(browseButton);
+    
+    // Кнопка обзора файла
+    connect(browseButton, &QPushButton::clicked, this, [&urlEdit, this]() {
+        QString fileName = QFileDialog::getOpenFileName(this, tr("Выберите файл"), "", tr("Все файлы (*)"));
+        if (!fileName.isEmpty()) {
+            urlEdit->setText(fileName);
+        }
+    });
+    
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    buttonLayout->addStretch();
+    QPushButton* okButton = new QPushButton(tr("ОК"), &linkDialog);
+    QPushButton* cancelButton = new QPushButton(tr("Отмена"), &linkDialog);
+    buttonLayout->addWidget(okButton);
+    buttonLayout->addWidget(cancelButton);
+    
+    layout->addWidget(textLabel);
+    layout->addWidget(textEdit);
+    layout->addWidget(urlLabel);
+    layout->addLayout(urlLayout);
+    layout->addLayout(buttonLayout);
+    
+    connect(okButton, &QPushButton::clicked, &linkDialog, &QDialog::accept);
+    connect(cancelButton, &QPushButton::clicked, &linkDialog, &QDialog::reject);
+    
+    if (linkDialog.exec() == QDialog::Accepted) {
+        QString linkText = textEdit->text();
+        QString url = urlEdit->text();
+        
+        if (!url.isEmpty()) {
+            // Заменяем выделенный текст на ссылку
+            QString linkMarkdown = QString("[%1](%2)").arg(linkText, url);
+            cursor.insertText(linkMarkdown);
+        }
     }
 }
 

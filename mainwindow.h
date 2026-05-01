@@ -261,6 +261,11 @@ private slots:
     void showEditorContextMenu(const QPoint& pos);
     
     /**
+     * @brief Сделать выделенный текст ссылкой
+     */
+    void makeSelectedTextLink();
+    
+    /**
      * @brief Открытие окна справки
      */
     void showHelp();

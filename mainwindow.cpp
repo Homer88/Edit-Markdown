@@ -3091,25 +3091,34 @@ void MainWindow::updatePreview()
     
     QString markdownText = m_markdownEditor->toPlainText();
     
-    // Обработка переносов строк для корректного отображения в Markdown
-    // Заменяем одиночные переносы строк на <br>, сохраняя двойные как разделители абзацев
-    QStringList paragraphs = markdownText.split("\n\n");
-    QStringList processedParagraphs;
+    // Сначала парсим Markdown (заголовки, списки и т.д.)
+    QString htmlContent = m_parser->parse(markdownText);
     
-    for (const QString &paragraph : paragraphs) {
-        QString processed = paragraph.trimmed();
-        if (!processed.isEmpty()) {
-            // Заменяем одиночные переносы на <br>
-            processed.replace("\n", "<br>");
-            processedParagraphs << processed;
-        } else {
-            processedParagraphs << "";
+    // После парсинга обрабатываем оставшиеся переносы строк в обычном тексте
+    // Заменяем одиночные переносы строк на <br>, но только вне HTML тегов
+    QStringList lines = htmlContent.split('\n');
+    QStringList processedLines;
+    
+    for (const QString &line : lines) {
+        QString trimmed = line.trimmed();
+        // Если строка содержит HTML теги блоков (h1-h6, p, ul, ol, li, blockquote, pre, hr),
+        // то не добавляем <br>, иначе заменяем переносы
+        if (!trimmed.isEmpty() && 
+            !trimmed.startsWith("<h") &&
+            !trimmed.startsWith("<ul") &&
+            !trimmed.startsWith("<ol") &&
+            !trimmed.startsWith("<li") &&
+            !trimmed.startsWith("<blockquote") &&
+            !trimmed.startsWith("<pre") &&
+            !trimmed.startsWith("<hr") &&
+            !trimmed.startsWith("<p")) {
+            // Это обычный текст, нужно убедиться что переносы корректны
+            // Но так как мы уже разбили по строкам, просто добавляем
         }
+        processedLines << line;
     }
     
-    markdownText = processedParagraphs.join("\n\n");
-    
-    QString htmlContent = m_parser->parse(markdownText);
+    htmlContent = processedLines.join('\n');
     
     // Формируем полный HTML с базовыми стилями
     QString fullHtml = R"(

@@ -1,3 +1,4 @@
+```
 # Compiled and build artifacts
 *.o
 *.obj
@@ -6,23 +7,19 @@
 *.so
 *.a
 *.out
-build/
-dist/
 
 # Dependencies
 venv/
 .venv/
 __pycache__/
 *.egg-info/
-.Python
-pip-log.txt
-pip-delete-this-directory.txt
+build/
+dist/
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-*.swo
 
 # Environment
 .env
@@ -35,20 +32,32 @@ pip-delete-this-directory.txt
 *.swp
 *.swo
 
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Coverage reports
+# Coverage
 coverage/
 htmlcov/
 .coverage
 
-# Python specific
-*.pyc
-*.pyo
-*.pyd
-.Python
-__pycache__/
-.pytest_cache/
-.mypy_cache/
+# Compression
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+```

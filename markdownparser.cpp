@@ -312,6 +312,8 @@ QString MarkdownParser::parseParagraphs(const QString& text)
             !trimmed.startsWith("<blockquote") &&
             !trimmed.startsWith("<pre") &&
             !trimmed.startsWith("<hr")) {
+            // Внутри параграфа заменяем одиночные переносы строк на <br>
+            trimmed.replace("\n", "<br>");
             processed += "<p>" + trimmed + "</p>";
         } else {
             processed += trimmed;

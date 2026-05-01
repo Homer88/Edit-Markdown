@@ -1334,7 +1334,18 @@ void MainWindow::insertHeader3()
  */
 void MainWindow::insertBulletList()
 {
-    insertMarkdownAtCursor("- ");
+    if (m_isWysiwygMode) {
+        // Режим WYSIWYG - используем QTextEdit
+        QTextCursor cursor = m_previewEditor->textCursor();
+        QTextListFormat listFormat;
+        listFormat.setStyle(QTextListFormat::ListDisc);
+        cursor.createList(listFormat);
+        m_previewEditor->setTextCursor(cursor);
+        m_previewEditor->setFocus();
+    } else {
+        // Режим Markdown - вставляем текст
+        insertMarkdownAtCursor("- ");
+    }
 }
 
 /**
@@ -1342,7 +1353,18 @@ void MainWindow::insertBulletList()
  */
 void MainWindow::insertNumberedList()
 {
-    insertMarkdownAtCursor("1. ");
+    if (m_isWysiwygMode) {
+        // Режим WYSIWYG - используем QTextEdit
+        QTextCursor cursor = m_previewEditor->textCursor();
+        QTextListFormat listFormat;
+        listFormat.setStyle(QTextListFormat::ListDecimal);
+        cursor.createList(listFormat);
+        m_previewEditor->setTextCursor(cursor);
+        m_previewEditor->setFocus();
+    } else {
+        // Режим Markdown - вставляем текст
+        insertMarkdownAtCursor("1. ");
+    }
 }
 
 /**

@@ -4,6 +4,7 @@
 #include <QRegularExpression>
 #include <QByteArray>
 #include <QList>
+#include <QDebug>
 
 SpellChecker::SpellChecker(const QString& affPath, const QString& dicPath)
     : m_hunspell(nullptr), m_initialized(false), m_language("ru_RU")

@@ -1,0 +1,179 @@
+{
+	"BUILD_DIR" : "/workspace/build/hunspell/hunspell/hunspell_autogen",
+	"CMAKE_BINARY_DIR" : "/workspace/build",
+	"CMAKE_CURRENT_BINARY_DIR" : "/workspace/build/hunspell/hunspell",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/workspace/hunspell/hunspell",
+	"CMAKE_EXECUTABLE" : "/usr/bin/cmake",
+	"CMAKE_LIST_FILES" : [ "/workspace/hunspell/hunspell/CMakeLists.txt" ],
+	"CMAKE_SOURCE_DIR" : "/workspace",
+	"DEP_FILE" : "",
+	"DEP_FILE_RULE_NAME" : "",
+	"HEADERS" : 
+	[
+		[
+			"/workspace/hunspell/hunspell/affentry.hxx",
+			"MU",
+			"EWIEGA46WW/moc_affentry.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/affixmgr.hxx",
+			"MU",
+			"EWIEGA46WW/moc_affixmgr.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/atypes.hxx",
+			"MU",
+			"EWIEGA46WW/moc_atypes.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/baseaffix.hxx",
+			"MU",
+			"EWIEGA46WW/moc_baseaffix.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/csutil.hxx",
+			"MU",
+			"EWIEGA46WW/moc_csutil.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/filemgr.hxx",
+			"MU",
+			"EWIEGA46WW/moc_filemgr.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/hashmgr.hxx",
+			"MU",
+			"EWIEGA46WW/moc_hashmgr.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/htypes.hxx",
+			"MU",
+			"EWIEGA46WW/moc_htypes.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/hunspell.h",
+			"MU",
+			"EWIEGA46WW/moc_hunspell.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/hunspell.hxx",
+			"MU",
+			"EWIEGA46WW/moc_hunspell_hxx.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/hunvisapi.h",
+			"MU",
+			"EWIEGA46WW/moc_hunvisapi.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/hunzip.hxx",
+			"MU",
+			"EWIEGA46WW/moc_hunzip.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/langnum.hxx",
+			"MU",
+			"EWIEGA46WW/moc_langnum.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/phonet.hxx",
+			"MU",
+			"EWIEGA46WW/moc_phonet.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/replist.hxx",
+			"MU",
+			"EWIEGA46WW/moc_replist.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/suggestmgr.hxx",
+			"MU",
+			"EWIEGA46WW/moc_suggestmgr.cpp",
+			null
+		],
+		[
+			"/workspace/hunspell/hunspell/w_char.hxx",
+			"MU",
+			"EWIEGA46WW/moc_w_char.cpp",
+			null
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "/workspace/build/hunspell/hunspell/hunspell_autogen/include",
+	"MOC_COMPILATION_FILE" : "/workspace/build/hunspell/hunspell/hunspell_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : [],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : 
+	[
+		"/workspace/hunspell/hunspell",
+		"/usr/include/c++/12",
+		"/usr/include/x86_64-linux-gnu/c++/12",
+		"/usr/include/c++/12/backward",
+		"/usr/lib/gcc/x86_64-linux-gnu/12/include",
+		"/usr/local/include",
+		"/usr/include/x86_64-linux-gnu",
+		"/usr/include"
+	],
+	"MOC_MACRO_NAMES" : [ "Q_OBJECT", "Q_GADGET", "Q_NAMESPACE", "Q_NAMESPACE_EXPORT" ],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : 
+	[
+		"/usr/bin/c++",
+		"-dM",
+		"-E",
+		"-c",
+		"/usr/share/cmake-3.25/Modules/CMakeCXXCompilerABI.cpp"
+	],
+	"MOC_PREDEFS_FILE" : "/workspace/build/hunspell/hunspell/hunspell_autogen/moc_predefs.h",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 2,
+	"PARSE_CACHE_FILE" : "/workspace/build/hunspell/hunspell/CMakeFiles/hunspell_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "/usr/lib/qt5/bin/moc",
+	"QT_UIC_EXECUTABLE" : "/usr/lib/qt5/bin/uic",
+	"QT_VERSION_MAJOR" : 5,
+	"QT_VERSION_MINOR" : 15,
+	"SETTINGS_FILE" : "/workspace/build/hunspell/hunspell/CMakeFiles/hunspell_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : 
+	[
+		[ "/workspace/hunspell/hunspell/affentry.cxx", "MU", null ],
+		[ "/workspace/hunspell/hunspell/affixmgr.cxx", "MU", null ],
+		[ "/workspace/hunspell/hunspell/csutil.cxx", "MU", null ],
+		[ "/workspace/hunspell/hunspell/filemgr.cxx", "MU", null ],
+		[ "/workspace/hunspell/hunspell/hashmgr.cxx", "MU", null ],
+		[ "/workspace/hunspell/hunspell/hunspell.cxx", "MU", null ],
+		[ "/workspace/hunspell/hunspell/hunzip.cxx", "MU", null ],
+		[ "/workspace/hunspell/hunspell/phonet.cxx", "MU", null ],
+		[ "/workspace/hunspell/hunspell/replist.cxx", "MU", null ],
+		[ "/workspace/hunspell/hunspell/suggestmgr.cxx", "MU", null ],
+		[ "/workspace/hunspell/hunspell/utf_info.cxx", "MU", null ]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : [],
+	"UIC_UI_FILES" : [],
+	"VERBOSITY" : 0
+}

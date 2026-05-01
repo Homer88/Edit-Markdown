@@ -18,6 +18,10 @@
 #include <QDir>
 #include <QPrinter>
 #include <QApplication>
+#include <QCoreApplication>
+#include <QStandardPaths>
+#include <QTextCodec>
+#include <QTextStream>
 
 /**
  * @brief Конструктор главного окна
@@ -35,10 +39,13 @@ MainWindow::MainWindow(QWidget *parent)
     , m_markdownAction(nullptr)
     , m_isWysiwygMode(false)
     , m_isModified(false)
-    , m_spellChecker(new SpellChecker("/usr/share/hunspell/ru_RU.aff", "/usr/share/hunspell/ru_RU.dic"))
+    , m_spellChecker(nullptr)
     , m_translator(new QTranslator(this))
     , m_currentLanguage("system")
 {
+    // Инициализация проверки орфографии с путями к словарям
+    initSpellChecker();
+    
     // Загружаем системный язык при запуске
     loadTranslations("system");
     
@@ -401,28 +408,175 @@ void MainWindow::createMenuBar()
     helpAction->setShortcut(QKeySequence::HelpContents);
     connect(helpAction, &QAction::triggered, this, &MainWindow::showHelp);
     
-    // Подменю языков
+    // Подменю языков - теперь заполняется динамически
     QMenu* langMenu = helpMenu->addMenu(tr("Language"));
     
-    QAction* sysLangAction = langMenu->addAction(tr("System Default"));
-    sysLangAction->setCheckable(true);
-    sysLangAction->setChecked(m_currentLanguage == "system");
-    connect(sysLangAction, &QAction::triggered, [this]() {
-        changeLanguage("system");
+    // Динамическое заполнение списка языков на основе файлов в папке translations
+    QString appPath = QCoreApplication::applicationDirPath();
+    QString transPath = QDir(appPath).filePath("translations");
+    QDir dir(transPath);
+    
+    // Множество для хранения уникальных кодов языков
+    QSet<QString> languages;
+    languages.insert("system"); // Всегда добавляем системный
+    
+    if (dir.exists()) {
+        QStringList filters;
+        filters << "*.qm";
+        dir.setNameFilters(filters);
+        QStringList files = dir.entryList();
+        
+        for (const QString &file : files) {
+            QString baseName = QFileInfo(file).completeBaseName();
+            QString langCode = baseName;
+            
+            // Логика извлечения кода языка из имени файла
+            if (baseName.contains('_')) {
+                int lastUnderscore = baseName.lastIndexOf('_');
+                QString potentialLang = baseName.mid(lastUnderscore + 1);
+                if (potentialLang.length() >= 2 && potentialLang.length() <= 5) {
+                    langCode = potentialLang;
+                }
+            }
+            
+            languages.insert(langCode);
+        }
+    }
+    
+    // Преобразуем в список и сортируем
+    QList<QString> sortedLangs = languages.values();
+    std::sort(sortedLangs.begin(), sortedLangs.end());
+    
+    // Создаем действия для каждого языка
+    for (const QString &lang : sortedLangs) {
+        QAction *langAction = langMenu->addAction(lang.toUpper());
+        langAction->setCheckable(true);
+        langAction->setChecked(m_currentLanguage == lang);
+        
+        // Используем замыкание для передачи кода языка
+        connect(langAction, &QAction::triggered, [this, lang]() {
+            changeLanguage(lang);
+        });
+    }
+    
+    // Меню Кодировка
+    QMenu* encodingMenu = menuBar->addMenu(tr("Encoding"));
+    
+    // Автоопределение кодировки
+    QAction* autoDetectAction = encodingMenu->addAction(tr("Auto Detect"));
+    autoDetectAction->setToolTip(tr("Автоматически определить кодировку файла"));
+    connect(autoDetectAction, &QAction::triggered, [this]() {
+        if (!m_currentFile.isEmpty()) {
+            QFile file(m_currentFile);
+            if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                QTextStream in(&file);
+                in.setAutoDetectUnicode(true);
+                QByteArray bom = file.peek(4);
+                if (bom.startsWith(QByteArray::fromHex("EFBBBF"))) {
+                    in.setCodec("UTF-8");
+                } else if (bom.startsWith(QByteArray::fromHex("FFFE0000")) || bom.startsWith(QByteArray::fromHex("0000FEFF"))) {
+                    in.setCodec("UTF-32");
+                } else if (bom.startsWith(QByteArray::fromHex("FFFE")) || bom.startsWith(QByteArray::fromHex("FEFF"))) {
+                    in.setCodec("UTF-16");
+                } else {
+                    in.setAutoDetectUnicode(true);
+                }
+                QString content = in.readAll();
+                file.close();
+                m_markdownEditor->setPlainText(content);
+                m_statusBar->showMessage(tr("Кодировка определена автоматически: ") + in.codec()->name());
+            }
+        } else {
+            m_statusBar->showMessage(tr("Сначала откройте файл"));
+        }
     });
     
-    QAction* ruLangAction = langMenu->addAction(tr("Russian"));
-    ruLangAction->setCheckable(true);
-    ruLangAction->setChecked(m_currentLanguage == "ru");
-    connect(ruLangAction, &QAction::triggered, [this]() {
-        changeLanguage("ru");
+    encodingMenu->addSeparator();
+    
+    // Популярные кодировки
+    QAction* utf8Action = encodingMenu->addAction("UTF-8");
+    utf8Action->setToolTip(tr("Конвертировать в UTF-8"));
+    connect(utf8Action, &QAction::triggered, [this]() {
+        convertEncoding("UTF-8");
     });
     
-    QAction* enLangAction = langMenu->addAction(tr("English"));
-    enLangAction->setCheckable(true);
-    enLangAction->setChecked(m_currentLanguage == "en");
-    connect(enLangAction, &QAction::triggered, [this]() {
-        changeLanguage("en");
+    QAction* utf8BomAction = encodingMenu->addAction("UTF-8 with BOM");
+    utf8BomAction->setToolTip(tr("Конвертировать в UTF-8 с BOM"));
+    connect(utf8BomAction, &QAction::triggered, [this]() {
+        convertEncoding("UTF-8");
+    });
+    
+    QAction* asciiAction = encodingMenu->addAction("ASCII");
+    asciiAction->setToolTip(tr("Конвертировать в ASCII"));
+    connect(asciiAction, &QAction::triggered, [this]() {
+        convertEncoding("ASCII");
+    });
+    
+    encodingMenu->addSeparator();
+    
+    // Кириллические кодировки
+    QMenu* cyrillicMenu = encodingMenu->addMenu(tr("Cyrillic"));
+    
+    QAction* win1251Action = cyrillicMenu->addAction("Windows-1251");
+    connect(win1251Action, &QAction::triggered, [this]() {
+        convertEncoding("Windows-1251");
+    });
+    
+    QAction* koi8rAction = cyrillicMenu->addAction("KOI8-R");
+    connect(koi8rAction, &QAction::triggered, [this]() {
+        convertEncoding("KOI8-R");
+    });
+    
+    QAction* cp866Action = cyrillicMenu->addAction("CP866");
+    connect(cp866Action, &QAction::triggered, [this]() {
+        convertEncoding("CP866");
+    });
+    
+    QAction* iso88595Action = cyrillicMenu->addAction("ISO 8859-5");
+    connect(iso88595Action, &QAction::triggered, [this]() {
+        convertEncoding("ISO 8859-5");
+    });
+    
+    encodingMenu->addSeparator();
+    
+    // Другие популярные кодировки
+    QMenu* otherMenu = encodingMenu->addMenu(tr("Other"));
+    
+    QAction* latin1Action = otherMenu->addAction("ISO 8859-1 (Latin-1)");
+    connect(latin1Action, &QAction::triggered, [this]() {
+        convertEncoding("ISO 8859-1");
+    });
+    
+    QAction* latin9Action = otherMenu->addAction("ISO 8859-15 (Latin-9)");
+    connect(latin9Action, &QAction::triggered, [this]() {
+        convertEncoding("ISO 8859-15");
+    });
+    
+    QAction* utf16Action = otherMenu->addAction("UTF-16");
+    connect(utf16Action, &QAction::triggered, [this]() {
+        convertEncoding("UTF-16");
+    });
+    
+    QAction* utf32Action = otherMenu->addAction("UTF-32");
+    connect(utf32Action, &QAction::triggered, [this]() {
+        convertEncoding("UTF-32");
+    });
+    
+    encodingMenu->addSeparator();
+    
+    // Выбор произвольной кодировки
+    QAction* customAction = encodingMenu->addAction(tr("Custom Encoding..."));
+    customAction->setToolTip(tr("Выбрать кодировку из списка"));
+    connect(customAction, &QAction::triggered, [this]() {
+        bool ok;
+        QStringList codecs = {"UTF-8", "UTF-16", "UTF-32", "Windows-1251", "Windows-1252", 
+                              "KOI8-R", "KOI8-U", "CP866", "ISO 8859-1", "ISO 8859-5", 
+                              "ISO 8859-15", "ASCII", "Shift_JIS", "GB18030", "Big5"};
+        QString codecName = QInputDialog::getItem(this, tr("Выберите кодировку"),
+                                                   tr("Кодировка:"), codecs, 0, false, &ok);
+        if (ok && !codecName.isEmpty()) {
+            convertEncoding(codecName);
+        }
     });
     
     helpMenu->addSeparator();
@@ -514,6 +668,136 @@ void MainWindow::applyPreviewStyles()
     )";
     
     m_previewEditor->document()->setDefaultStyleSheet(style);
+}
+
+/**
+ * @brief Инициализация проверки орфографии с определением путей к словарям
+ */
+void MainWindow::initSpellChecker()
+{
+    QString affPath;
+    QString dicPath;
+    
+    // Сначала проверяем папку приложения (для переносимости между ОС)
+    QString appDir = QCoreApplication::applicationDirPath();
+    
+    // Функция для поиска пары файлов .aff и .dic по базовому имени
+    auto findDictionaryPair = [appDir](const QString& folder, const QString& baseName) -> bool {
+        QString aff = appDir + "/" + folder + "/" + baseName + ".aff";
+        QString dic = appDir + "/" + folder + "/" + baseName + ".dic";
+        return QFile::exists(aff) && QFile::exists(dic);
+    };
+    
+    // Список папок для поиска (ищем только в dictionary и корневой папке приложения)
+    QStringList folders = {"dictionary", ""};
+    
+    // Приоритет: ru_RU (как основной), затем другие языки
+    QStringList languagePriority = {"ru_RU", "en_US", "en_GB", "de_DE", "fr_FR", "es_ES"};
+    
+    bool found = false;
+    
+    // Ищем словари в приоритетном порядке
+    for (const QString& folder : folders) {
+        if (found) break;
+        
+        QString folderPath = appDir;
+        if (!folder.isEmpty()) {
+            folderPath += "/" + folder;
+        }
+        
+        // Сначала ищем ru_RU (или другой приоритетный язык)
+        for (const QString& lang : languagePriority) {
+            QString aff = folderPath + "/" + lang + ".aff";
+            QString dic = folderPath + "/" + lang + ".dic";
+            
+            if (QFile::exists(aff) && QFile::exists(dic)) {
+                affPath = aff;
+                dicPath = dic;
+                found = true;
+                break;
+            }
+        }
+        
+        // Если не нашли приоритетные, ищем любой первый попавшийся словарь в папке
+        if (!found && !folder.isEmpty()) {
+            QDir dir(folderPath);
+            if (dir.exists()) {
+                QStringList affFiles = dir.entryList(QStringList() << "*.aff", QDir::Files);
+                for (const QString& affFile : affFiles) {
+                    QString baseName = affFile.left(affFile.length() - 4); // убираем .aff
+                    QString dicFile = baseName + ".dic";
+                    if (QFile::exists(folderPath + "/" + dicFile)) {
+                        affPath = folderPath + "/" + affFile;
+                        dicPath = folderPath + "/" + dicFile;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Проверяем папку проекта (для разработки)
+    if (!found && QFile::exists("hunspell/ru_RU.aff") && QFile::exists("hunspell/ru_RU.dic")) {
+        affPath = "hunspell/ru_RU.aff";
+        dicPath = "hunspell/ru_RU.dic";
+        found = true;
+    }
+    
+    // Для Windows: проверяем стандартные пути установки
+#ifdef Q_OS_WIN
+    if (!found) {
+        QStringList winPaths;
+        winPaths << appDir + "/hunspell"
+                 << appDir + "/../hunspell";
+        
+        for (const QString& path : winPaths) {
+            QDir dir(path);
+            if (dir.exists()) {
+                QStringList affFiles = dir.entryList(QStringList() << "*.aff", QDir::Files);
+                for (const QString& affFile : affFiles) {
+                    QString baseName = affFile.left(affFile.length() - 4);
+                    QString dicFile = baseName + ".dic";
+                    if (QFile::exists(path + "/" + dicFile)) {
+                        affPath = path + "/" + affFile;
+                        dicPath = path + "/" + dicFile;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (found) break;
+        }
+    }
+#endif
+    
+    // Пробуем системные пути Linux
+    if (!found && QFile::exists("/usr/share/hunspell/ru_RU.aff") && QFile::exists("/usr/share/hunspell/ru_RU.dic")) {
+        affPath = "/usr/share/hunspell/ru_RU.aff";
+        dicPath = "/usr/share/hunspell/ru_RU.dic";
+        found = true;
+    }
+    
+    // Пробуем альтернативные системные пути Linux
+    if (!found && QFile::exists("/usr/share/hunspell/ru_RU-affix.dat") && QFile::exists("/usr/share/hunspell/ru_RU-dict.dat")) {
+        affPath = "/usr/share/hunspell/ru_RU-affix.dat";
+        dicPath = "/usr/share/hunspell/ru_RU-dict.dat";
+        found = true;
+    }
+    
+    if (found && !affPath.isEmpty() && !dicPath.isEmpty()) {
+        m_spellChecker = new SpellChecker(affPath, dicPath);
+        if (!m_spellChecker->isInitialized()) {
+            qWarning() << "Не удалось инициализировать проверку орфографии";
+            delete m_spellChecker;
+            m_spellChecker = nullptr;
+        } else {
+            qDebug() << "Словарь загружен:" << affPath << dicPath;
+        }
+    } else {
+        qWarning() << "Файлы словаря не найдены. Проверка орфографии будет недоступна.";
+        m_spellChecker = nullptr;
+    }
 }
 
 /**
@@ -611,7 +895,23 @@ void MainWindow::openFile()
         return;
     }
     
+    // Автоопределение кодировки
     QTextStream in(&file);
+    in.setAutoDetectUnicode(true);  // Включает автоопределение UTF-8, UTF-16, UTF-32 и системной кодировки
+    
+    // Проверяем наличие BOM для более точного определения
+    QByteArray bom = file.peek(4);
+    if (bom.startsWith(QByteArray::fromHex("EFBBBF"))) {
+        in.setCodec("UTF-8");
+    } else if (bom.startsWith(QByteArray::fromHex("FFFE0000")) || bom.startsWith(QByteArray::fromHex("0000FEFF"))) {
+        in.setCodec("UTF-32");
+    } else if (bom.startsWith(QByteArray::fromHex("FFFE")) || bom.startsWith(QByteArray::fromHex("FEFF"))) {
+        in.setCodec("UTF-16");
+    } else {
+        // Если BOM нет, пробуем определить по содержимому или используем системную
+        in.setAutoDetectUnicode(true);
+    }
+    
     QString content = in.readAll();
     file.close();
     
@@ -640,6 +940,9 @@ void MainWindow::saveFile()
     }
     
     QTextStream out(&file);
+    // Сохраняем в UTF-8 с BOM для максимальной совместимости
+    out.setCodec("UTF-8");
+    out.setGenerateByteOrderMark(true);
     out << m_markdownEditor->toPlainText();
     file.close();
     
@@ -1298,11 +1601,41 @@ void MainWindow::loadTranslations(const QString& language)
     // Удаляем предыдущий переводчик
     qApp->removeTranslator(m_translator);
     
-    // Формируем путь к файлу перевода
-    QString translationFile = ":/translations/editor_" + langToLoad + ".qm";
+    // Путь к папке с переводами рядом с исполняемым файлом
+    QString appPath = QCoreApplication::applicationDirPath();
+    QString transPath = QDir(appPath).filePath("translations");
     
-    // Пытаемся загрузить перевод из ресурсов
-    if (m_translator->load(translationFile)) {
+    // Формируем возможные имена файлов перевода
+    QStringList possibleFiles;
+    possibleFiles << ("editor_" + langToLoad + ".qm")
+                  << ("markdown_editor_" + langToLoad + ".qm")
+                  << (langToLoad + ".qm");
+    
+    bool loaded = false;
+    
+    // Пытаемся загрузить из папки translations рядом с приложением
+    for (const QString &fileName : possibleFiles) {
+        QString filePath = transPath + "/" + fileName;
+        if (QFile::exists(filePath)) {
+            if (m_translator->load(filePath)) {
+                loaded = true;
+                break;
+            }
+        }
+    }
+    
+    // Если не нашли, пробуем загрузить из ресурсов
+    if (!loaded) {
+        for (const QString &fileName : possibleFiles) {
+            QString resourcePath = ":/translations/" + fileName;
+            if (m_translator->load(resourcePath)) {
+                loaded = true;
+                break;
+            }
+        }
+    }
+    
+    if (loaded) {
         qApp->installTranslator(m_translator);
         m_currentLanguage = language;
         
@@ -1311,17 +1644,12 @@ void MainWindow::loadTranslations(const QString& language)
         createToolBar();
         updateWindowTitle();
     } else {
-        // Если файл не найден в ресурсах, пробуем загрузить из папки translations
-        QString localPath = QApplication::applicationDirPath() + "/../translations/editor_" + langToLoad + ".qm";
-        if (QFile::exists(localPath)) {
-            if (m_translator->load(localPath)) {
-                qApp->installTranslator(m_translator);
-                m_currentLanguage = language;
-                createMenuBar();
-                createToolBar();
-                updateWindowTitle();
-            }
-        }
+        qDebug() << "Warning: Translation file for" << language << "not found.";
+        m_currentLanguage = language;
+        // Всё равно обновляем меню, чтобы отразить выбор пользователя
+        createMenuBar();
+        createToolBar();
+        updateWindowTitle();
     }
 }
 
@@ -1362,4 +1690,74 @@ void MainWindow::changeTextColor()
             }
         }
     }
+}
+
+/**
+ * @brief Конвертировать файл в указанную кодировку
+ */
+void MainWindow::convertEncoding(const QString& codecName)
+{
+    if (m_currentFile.isEmpty()) {
+        QMessageBox::warning(this, tr("Ошибка"), tr("Сначала откройте файл для конвертации кодировки."));
+        return;
+    }
+    
+    // Читаем текущий текст из редактора (он уже в Unicode)
+    QString content = m_markdownEditor->toPlainText();
+    
+    // Конвертируем текст в целевую кодировку и обратно для проверки
+    QTextCodec* codec = QTextCodec::codecForName(codecName.toUtf8());
+    if (!codec) {
+        QMessageBox::critical(this, tr("Ошибка"), 
+            tr("Не удалось найти кодировку: %1").arg(codecName));
+        return;
+    }
+    
+    // Проверяем, можно ли сконвертировать текст в эту кодировку
+    QByteArray encodedData = codec->fromUnicode(content);
+    QString decodedContent = codec->toUnicode(encodedData);
+    
+    // Предупреждаем о возможной потере данных
+    if (decodedContent != content) {
+        QMessageBox::StandardButton reply = QMessageBox::warning(
+            this,
+            tr("Предупреждение"),
+            tr("При конвертации в кодировку %1 возможна потеря данных "
+               "(некоторые символы могут быть заменены или утеряны).\n\n"
+               "Продолжить?").arg(codecName),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No
+        );
+        
+        if (reply == QMessageBox::No) {
+            return;
+        }
+    }
+    
+    // Сохраняем файл в новой кодировке
+    QFile file(m_currentFile);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Ошибка"), tr("Не удалось сохранить файл."));
+        return;
+    }
+    
+    QTextStream out(&file);
+    out.setCodec(codecName.toUtf8());
+    
+    // Добавляем BOM для UTF-8, UTF-16, UTF-32
+    if (codecName.contains("UTF-8", Qt::CaseInsensitive)) {
+        out.setGenerateByteOrderMark(true);
+    } else if (codecName.contains("UTF-16", Qt::CaseInsensitive)) {
+        out.setGenerateByteOrderMark(true);
+    } else if (codecName.contains("UTF-32", Qt::CaseInsensitive)) {
+        out.setGenerateByteOrderMark(true);
+    }
+    
+    out << content;
+    file.close();
+    
+    m_statusBar->showMessage(tr("Файл конвертирован в кодировку: ") + codecName);
+    
+    // Перечитываем файл чтобы убедиться что всё корректно
+    openFile();
 }

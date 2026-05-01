@@ -532,62 +532,118 @@ void MainWindow::initSpellChecker()
     // Сначала проверяем папку приложения (для переносимости между ОС)
     QString appDir = QCoreApplication::applicationDirPath();
     
-    // Проверяем папку application/dictionary (для Windows и других ОС)
-    if (QFile::exists(appDir + "/dictionary/ru_RU.aff") && QFile::exists(appDir + "/dictionary/ru_RU.dic")) {
-        affPath = appDir + "/dictionary/ru_RU.aff";
-        dicPath = appDir + "/dictionary/ru_RU.dic";
-    }
-    // Также проверяем вариант с кириллическим названием папки словари
-    else if (QFile::exists(appDir + "/словари/ru_RU.aff") && QFile::exists(appDir + "/словари/ru_RU.dic")) {
-        affPath = appDir + "/словари/ru_RU.aff";
-        dicPath = appDir + "/словари/ru_RU.dic";
-    }
-    // Проверяем просто папку приложения (если словари лежат прямо там)
-    else if (QFile::exists(appDir + "/ru_RU.aff") && QFile::exists(appDir + "/ru_RU.dic")) {
-        affPath = appDir + "/ru_RU.aff";
-        dicPath = appDir + "/ru_RU.dic";
-    }
-    // Проверяем папку проекта (для разработки)
-    else if (QFile::exists("hunspell/ru_RU.aff") && QFile::exists("hunspell/ru_RU.dic")) {
-        affPath = "hunspell/ru_RU.aff";
-        dicPath = "hunspell/ru_RU.dic";
-    }
-    // Для Windows: проверяем стандартные пути установки
-#ifdef Q_OS_WIN
-    else {
-        QStringList winPaths;
-        winPaths << appDir + "/hunspell/ru_RU.aff"
-                 << appDir + "/../hunspell/ru_RU.aff"
-                 << QStandardPaths::locate(QStandardPaths::AppDataLocation, "hunspell/ru_RU.aff");
+    // Функция для поиска пары файлов .aff и .dic по базовому имени
+    auto findDictionaryPair = [appDir](const QString& folder, const QString& baseName) -> bool {
+        QString aff = appDir + "/" + folder + "/" + baseName + ".aff";
+        QString dic = appDir + "/" + folder + "/" + baseName + ".dic";
+        return QFile::exists(aff) && QFile::exists(dic);
+    };
+    
+    // Список папок для поиска (ищем только в dictionary и корневой папке приложения)
+    QStringList folders = {"dictionary", ""};
+    
+    // Приоритет: ru_RU (как основной), затем другие языки
+    QStringList languagePriority = {"ru_RU", "en_US", "en_GB", "de_DE", "fr_FR", "es_ES"};
+    
+    bool found = false;
+    
+    // Ищем словари в приоритетном порядке
+    for (const QString& folder : folders) {
+        if (found) break;
         
-        for (const QString& path : winPaths) {
-            if (!path.isEmpty() && QFile::exists(path) && 
-                QFile::exists(path.replace(".aff", ".dic"))) {
-                affPath = path;
-                dicPath = path.replace(".aff", ".dic");
+        QString folderPath = appDir;
+        if (!folder.isEmpty()) {
+            folderPath += "/" + folder;
+        }
+        
+        // Сначала ищем ru_RU (или другой приоритетный язык)
+        for (const QString& lang : languagePriority) {
+            QString aff = folderPath + "/" + lang + ".aff";
+            QString dic = folderPath + "/" + lang + ".dic";
+            
+            if (QFile::exists(aff) && QFile::exists(dic)) {
+                affPath = aff;
+                dicPath = dic;
+                found = true;
                 break;
             }
+        }
+        
+        // Если не нашли приоритетные, ищем любой первый попавшийся словарь в папке
+        if (!found && !folder.isEmpty()) {
+            QDir dir(folderPath);
+            if (dir.exists()) {
+                QStringList affFiles = dir.entryList(QStringList() << "*.aff", QDir::Files);
+                for (const QString& affFile : affFiles) {
+                    QString baseName = affFile.left(affFile.length() - 4); // убираем .aff
+                    QString dicFile = baseName + ".dic";
+                    if (QFile::exists(folderPath + "/" + dicFile)) {
+                        affPath = folderPath + "/" + affFile;
+                        dicPath = folderPath + "/" + dicFile;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Проверяем папку проекта (для разработки)
+    if (!found && QFile::exists("hunspell/ru_RU.aff") && QFile::exists("hunspell/ru_RU.dic")) {
+        affPath = "hunspell/ru_RU.aff";
+        dicPath = "hunspell/ru_RU.dic";
+        found = true;
+    }
+    
+    // Для Windows: проверяем стандартные пути установки
+#ifdef Q_OS_WIN
+    if (!found) {
+        QStringList winPaths;
+        winPaths << appDir + "/hunspell"
+                 << appDir + "/../hunspell";
+        
+        for (const QString& path : winPaths) {
+            QDir dir(path);
+            if (dir.exists()) {
+                QStringList affFiles = dir.entryList(QStringList() << "*.aff", QDir::Files);
+                for (const QString& affFile : affFiles) {
+                    QString baseName = affFile.left(affFile.length() - 4);
+                    QString dicFile = baseName + ".dic";
+                    if (QFile::exists(path + "/" + dicFile)) {
+                        affPath = path + "/" + affFile;
+                        dicPath = path + "/" + dicFile;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (found) break;
         }
     }
 #endif
     
     // Пробуем системные пути Linux
-    if (affPath.isEmpty() && QFile::exists("/usr/share/hunspell/ru_RU.aff") && QFile::exists("/usr/share/hunspell/ru_RU.dic")) {
+    if (!found && QFile::exists("/usr/share/hunspell/ru_RU.aff") && QFile::exists("/usr/share/hunspell/ru_RU.dic")) {
         affPath = "/usr/share/hunspell/ru_RU.aff";
         dicPath = "/usr/share/hunspell/ru_RU.dic";
-    }
-    // Пробуем альтернативные системные пути Linux
-    if (affPath.isEmpty() && QFile::exists("/usr/share/hunspell/ru_RU-affix.dat") && QFile::exists("/usr/share/hunspell/ru_RU-dict.dat")) {
-        affPath = "/usr/share/hunspell/ru_RU-affix.dat";
-        dicPath = "/usr/share/hunspell/ru_RU-dict.dat";
+        found = true;
     }
     
-    if (!affPath.isEmpty() && !dicPath.isEmpty()) {
+    // Пробуем альтернативные системные пути Linux
+    if (!found && QFile::exists("/usr/share/hunspell/ru_RU-affix.dat") && QFile::exists("/usr/share/hunspell/ru_RU-dict.dat")) {
+        affPath = "/usr/share/hunspell/ru_RU-affix.dat";
+        dicPath = "/usr/share/hunspell/ru_RU-dict.dat";
+        found = true;
+    }
+    
+    if (found && !affPath.isEmpty() && !dicPath.isEmpty()) {
         m_spellChecker = new SpellChecker(affPath, dicPath);
         if (!m_spellChecker->isInitialized()) {
             qWarning() << "Не удалось инициализировать проверку орфографии";
             delete m_spellChecker;
             m_spellChecker = nullptr;
+        } else {
+            qDebug() << "Словарь загружен:" << affPath << dicPath;
         }
     } else {
         qWarning() << "Файлы словаря не найдены. Проверка орфографии будет недоступна.";
@@ -690,7 +746,23 @@ void MainWindow::openFile()
         return;
     }
     
+    // Автоопределение кодировки
     QTextStream in(&file);
+    in.setAutoDetectUnicode(true);  // Включает автоопределение UTF-8, UTF-16, UTF-32 и системной кодировки
+    
+    // Проверяем наличие BOM для более точного определения
+    QByteArray bom = file.peek(4);
+    if (bom.startsWith(QByteArray::fromHex("EFBBBF"))) {
+        in.setCodec("UTF-8");
+    } else if (bom.startsWith(QByteArray::fromHex("FFFE0000")) || bom.startsWith(QByteArray::fromHex("0000FEFF"))) {
+        in.setCodec("UTF-32");
+    } else if (bom.startsWith(QByteArray::fromHex("FFFE")) || bom.startsWith(QByteArray::fromHex("FEFF"))) {
+        in.setCodec("UTF-16");
+    } else {
+        // Если BOM нет, пробуем определить по содержимому или используем системную
+        in.setAutoDetectUnicode(true);
+    }
+    
     QString content = in.readAll();
     file.close();
     
@@ -719,6 +791,9 @@ void MainWindow::saveFile()
     }
     
     QTextStream out(&file);
+    // Сохраняем в UTF-8 с BOM для максимальной совместимости
+    out.setCodec("UTF-8");
+    out.setGenerateByteOrderMark(true);
     out << m_markdownEditor->toPlainText();
     file.close();
     

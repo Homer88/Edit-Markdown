@@ -27,7 +27,7 @@ set(PROJECT_SOURCES
 
 # Hunspell библиотека (локальная версия)
 # Используем локальные заголовки и библиотеку из папки hunspell/
-set(HUNSPELL_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/hunspell")
+set(HUNSPELL_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}")
 set(HUNSPELL_LIBRARIES "${CMAKE_SOURCE_DIR}/hunspell/libhunspell.lib")
 
 # Создаем исполняемый файл

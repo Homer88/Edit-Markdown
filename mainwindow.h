@@ -266,6 +266,17 @@ private slots:
     void makeSelectedTextLink();
     
     /**
+     * @brief Преобразовать выделенный текст в заголовок указанного уровня
+     * @param level Уровень заголовка (1, 2 или 3)
+     */
+    void convertSelectionToHeader(int level);
+    
+    /**
+     * @brief Показать диалог свойств гиперссылки
+     */
+    void showLinkPropertiesDialog();
+    
+    /**
      * @brief Обработчик изменения текста в WYSIWYG редакторе для синхронизации с Markdown
      */
     void onWysiwygTextChanged();

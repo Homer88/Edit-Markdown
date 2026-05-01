@@ -2402,9 +2402,27 @@ void MainWindow::showEditorContextMenu(const QPoint& pos)
     QString selectedText = m_markdownEditor->textCursor().selectedText();
     if (!selectedText.isEmpty()) {
         contextMenu.addSeparator();
+        
+        // Подменю для заголовков
+        QMenu *headerMenu = contextMenu.addMenu(tr("Заголовок"));
+        
+        QAction* makeH1Action = headerMenu->addAction(tr("Заголовок 1 (H1)"));
+        connect(makeH1Action, &QAction::triggered, this, [this]() { convertSelectionToHeader(1); });
+        
+        QAction* makeH2Action = headerMenu->addAction(tr("Заголовок 2 (H2)"));
+        connect(makeH2Action, &QAction::triggered, this, [this]() { convertSelectionToHeader(2); });
+        
+        QAction* makeH3Action = headerMenu->addAction(tr("Заголовок 3 (H3)"));
+        connect(makeH3Action, &QAction::triggered, this, [this]() { convertSelectionToHeader(3); });
+        
         QAction* makeLinkAction = contextMenu.addAction(tr("Сделать ссылкой"));
         connect(makeLinkAction, &QAction::triggered, this, &MainWindow::makeSelectedTextLink);
     }
+    
+    // Добавляем пункт "Свойства гиперссылки"
+    contextMenu.addSeparator();
+    QAction* linkPropertiesAction = contextMenu.addAction(tr("Свойства гиперссылки"));
+    connect(linkPropertiesAction, &QAction::triggered, this, &MainWindow::showLinkPropertiesDialog);
     
     // --- Table Operations Submenu ---
     contextMenu.addSeparator();
@@ -2508,6 +2526,249 @@ void MainWindow::makeSelectedTextLink()
                 QString linkMarkdown = QString("[%1](%2)").arg(linkText, url);
                 cursor.insertText(linkMarkdown);
             }
+        }
+    }
+}
+
+/**
+ * @brief Преобразовать выделенный текст в заголовок указанного уровня
+ * @param level Уровень заголовка (1, 2 или 3)
+ */
+void MainWindow::convertSelectionToHeader(int level)
+{
+    QString selectedText;
+    QTextCursor cursor;
+    
+    if (m_isWysiwygMode) {
+        cursor = m_previewEditor->textCursor();
+        selectedText = cursor.selectedText();
+    } else {
+        cursor = m_markdownEditor->textCursor();
+        selectedText = cursor.selectedText();
+    }
+    
+    if (selectedText.isEmpty()) {
+        return;
+    }
+    
+    // Формируем префикс заголовка
+    QString headerPrefix;
+    for (int i = 0; i < level; ++i) {
+        headerPrefix += "#";
+    }
+    headerPrefix += " ";
+    
+    if (m_isWysiwygMode) {
+        // В режиме WYSIWYG просто применяем форматирование
+        QTextCharFormat format = cursor.charFormat();
+        QFont font = format.font();
+        int basePointSize = font.pointSize();
+        if (basePointSize <= 0) basePointSize = 12;
+        
+        // Увеличиваем размер шрифта в зависимости от уровня
+        switch (level) {
+            case 1:
+                font.setPointSize(basePointSize + 8);
+                font.setBold(true);
+                break;
+            case 2:
+                font.setPointSize(basePointSize + 4);
+                font.setBold(true);
+                break;
+            case 3:
+                font.setPointSize(basePointSize + 2);
+                font.setBold(true);
+                break;
+        }
+        
+        format.setFont(font);
+        cursor.setCharFormat(format);
+        m_previewEditor->setTextCursor(cursor);
+    } else {
+        // В режиме Markdown добавляем символы # перед текстом
+        QString headerText = headerPrefix + selectedText;
+        cursor.insertText(headerText);
+    }
+}
+
+/**
+ * @brief Показать диалог свойств гиперссылки
+ */
+void MainWindow::showLinkPropertiesDialog()
+{
+    // Определяем текущий текст и ссылку под курсором
+    QString currentText;
+    QString currentUrl;
+    bool isLink = false;
+    
+    if (m_isWysiwygMode) {
+        QTextCursor cursor = m_previewEditor->textCursor();
+        // Проверяем, находится ли курсор внутри ссылки
+        QTextCharFormat format = cursor.charFormat();
+        if (format.isAnchor()) {
+            isLink = true;
+            currentUrl = format.anchorHref();
+            currentText = cursor.selectedText();
+            if (currentText.isEmpty()) {
+                // Получаем текст ссылки из блока
+                cursor.select(QTextCursor::WordUnderCursor);
+                currentText = cursor.selectedText();
+            }
+        }
+    } else {
+        QTextCursor cursor = m_markdownEditor->textCursor();
+        int pos = cursor.position();
+        QString text = m_markdownEditor->toPlainText();
+        
+        // Ищем шаблон ссылки [текст](url) вокруг позиции курсора
+        QRegularExpression linkRegex("\\[([^\\]]+)\\]\\(([^)]+)\\)");
+        QRegularExpressionMatchIterator it = linkRegex.globalMatch(text);
+        
+        while (it.hasNext()) {
+            QRegularExpressionMatch match = it.next();
+            int matchStart = match.capturedStart();
+            int matchEnd = match.capturedEnd();
+            
+            if (pos >= matchStart && pos <= matchEnd) {
+                isLink = true;
+                currentText = match.captured(1);
+                currentUrl = match.captured(2);
+                break;
+            }
+        }
+    }
+    
+    // Создаем диалог для ввода свойств ссылки
+    QDialog linkDialog(this);
+    linkDialog.setWindowTitle(tr("Свойства гиперссылки"));
+    linkDialog.setMinimumWidth(400);
+    
+    QVBoxLayout* layout = new QVBoxLayout(&linkDialog);
+    
+    QLabel* textLabel = new QLabel(tr("Текст:"), &linkDialog);
+    QLineEdit* textEdit = new QLineEdit(currentText, &linkDialog);
+    
+    QLabel* urlLabel = new QLabel(tr("Ссылка:"), &linkDialog);
+    QHBoxLayout* urlLayout = new QHBoxLayout();
+    QLineEdit* urlEdit = new QLineEdit(currentUrl, &linkDialog);
+    QPushButton* browseButton = new QPushButton(tr("Обзор..."), &linkDialog);
+    urlLayout->addWidget(urlEdit);
+    urlLayout->addWidget(browseButton);
+    
+    // Кнопка обзора файла
+    connect(browseButton, &QPushButton::clicked, this, [&urlEdit, this]() {
+        QString fileName = QFileDialog::getOpenFileName(this, tr("Выберите файл"), "", tr("Все файлы (*)"));
+        if (!fileName.isEmpty()) {
+            urlEdit->setText(fileName);
+        }
+    });
+    
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    buttonLayout->addStretch();
+    QPushButton* okButton = new QPushButton(tr("ОК"), &linkDialog);
+    QPushButton* cancelButton = new QPushButton(tr("Отмена"), &linkDialog);
+    QPushButton* deleteButton = nullptr;
+    
+    if (isLink) {
+        deleteButton = new QPushButton(tr("Удалить ссылку"), &linkDialog);
+        buttonLayout->addWidget(deleteButton);
+    }
+    
+    buttonLayout->addWidget(okButton);
+    buttonLayout->addWidget(cancelButton);
+    
+    layout->addWidget(textLabel);
+    layout->addWidget(textEdit);
+    layout->addWidget(urlLabel);
+    layout->addLayout(urlLayout);
+    layout->addLayout(buttonLayout);
+    
+    connect(okButton, &QPushButton::clicked, &linkDialog, &QDialog::accept);
+    connect(cancelButton, &QPushButton::clicked, &linkDialog, &QDialog::reject);
+    
+    if (deleteButton) {
+        connect(deleteButton, &QPushButton::clicked, &linkDialog, [&linkDialog, this, &cursor]() {
+            // Удаляем ссылку
+            if (m_isWysiwygMode) {
+                QTextCursor cursor = m_previewEditor->textCursor();
+                QTextCharFormat format;
+                format.setAnchor(false);
+                format.setAnchorHref("");
+                cursor.setCharFormat(format);
+                m_previewEditor->setTextCursor(cursor);
+            } else {
+                QTextCursor cursor = m_markdownEditor->textCursor();
+                int pos = cursor.position();
+                QString text = m_markdownEditor->toPlainText();
+                
+                QRegularExpression linkRegex("\\[([^\\]]+)\\]\\(([^)]+)\\)");
+                QRegularExpressionMatchIterator it = linkRegex.globalMatch(text);
+                
+                while (it.hasNext()) {
+                    QRegularExpressionMatch match = it.next();
+                    int matchStart = match.capturedStart();
+                    int matchEnd = match.capturedEnd();
+                    
+                    if (pos >= matchStart && pos <= matchEnd) {
+                        cursor.setPosition(matchStart);
+                        cursor.setPosition(matchEnd, QTextCursor::KeepAnchor);
+                        cursor.removeSelectedText();
+                        cursor.insertText(match.captured(1));
+                        break;
+                    }
+                }
+            }
+            linkDialog.accept();
+        });
+    }
+    
+    if (linkDialog.exec() == QDialog::Accepted) {
+        QString linkText = textEdit->text();
+        QString url = urlEdit->text();
+        
+        if (!url.isEmpty() && !linkText.isEmpty()) {
+            if (m_isWysiwygMode) {
+                QTextCursor cursor = m_previewEditor->textCursor();
+                if (isLink) {
+                    // Обновляем существующую ссылку
+                    cursor.beginEditBlock();
+                    cursor.select(QTextCursor::WordUnderCursor);
+                    cursor.removeSelectedText();
+                    cursor.insertHtml(QString("<a href=\"%1\">%2</a>").arg(url, linkText));
+                    cursor.endEditBlock();
+                } else {
+                    cursor.insertHtml(QString("<a href=\"%1\">%2</a>").arg(url, linkText));
+                }
+                m_previewEditor->setTextCursor(cursor);
+            } else {
+                QTextCursor cursor = m_markdownEditor->textCursor();
+                if (isLink) {
+                    // Находим и заменяем существующую ссылку
+                    int pos = cursor.position();
+                    QString text = m_markdownEditor->toPlainText();
+                    
+                    QRegularExpression linkRegex("\\[([^\\]]+)\\]\\(([^)]+)\\)");
+                    QRegularExpressionMatchIterator it = linkRegex.globalMatch(text);
+                    
+                    while (it.hasNext()) {
+                        QRegularExpressionMatch match = it.next();
+                        int matchStart = match.capturedStart();
+                        int matchEnd = match.capturedEnd();
+                        
+                        if (pos >= matchStart && pos <= matchEnd) {
+                            cursor.setPosition(matchStart);
+                            cursor.setPosition(matchEnd, QTextCursor::KeepAnchor);
+                            cursor.removeSelectedText();
+                            cursor.insertText(QString("[%1](%2)").arg(linkText, url));
+                            break;
+                        }
+                    }
+                } else {
+                    QString linkMarkdown = QString("[%1](%2)").arg(linkText, url);
+                    cursor.insertText(linkMarkdown);
+                }
+            }
+            updatePreview();
         }
     }
 }

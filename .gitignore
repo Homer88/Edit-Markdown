@@ -15,13 +15,11 @@ __pycache__/
 *.egg-info/
 build/
 dist/
-target/
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-*.swo
 
 # Environment
 .env
@@ -31,22 +29,29 @@ target/
 # Editors
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# OS generated files
-.DS_Store
-Thumbs.db
+# Qt specific
+*.qm
+*.pro.user
+*.pri.user
+moc_*
+qrc_*
+ui_*
 
-# Coverage reports
+# Coverage
+.coverage
 coverage/
 htmlcov/
-.coverage
 
-# MyPy cache
+# MyPy
 .mypy_cache/
-# PyTest cache
+
+# PyTest
 .pytest_cache/
+
+# Gradle
+.gradle/
+target/
 
 # Compressed files
 *.zip

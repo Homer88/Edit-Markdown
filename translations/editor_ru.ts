@@ -156,6 +156,14 @@
         <translation>Удалить строку</translation>
     </message>
     <message>
+        <source>Insert Table</source>
+        <translation>Вставить таблицу</translation>
+    </message>
+    <message>
+        <source>Delete Table</source>
+        <translation>Удалить таблицу</translation>
+    </message>
+    <message>
         <source>Text Color</source>
         <translation>Цвет текста</translation>
     </message>

@@ -156,6 +156,14 @@
         <translation>Delete Row</translation>
     </message>
     <message>
+        <source>Insert Table</source>
+        <translation>Insert Table</translation>
+    </message>
+    <message>
+        <source>Delete Table</source>
+        <translation>Delete Table</translation>
+    </message>
+    <message>
         <source>Text Color</source>
         <translation>Text Color</translation>
     </message>

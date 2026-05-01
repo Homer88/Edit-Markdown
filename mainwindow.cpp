@@ -286,7 +286,9 @@ void MainWindow::createToolBar()
  */
 void MainWindow::createMenuBar()
 {
+    // Очищаем существующее меню перед созданием нового (чтобы избежать дублирования при смене языка)
     QMenuBar* menuBar = this->menuBar();
+    menuBar->clear();
     
     // Меню Файл
     QMenu* fileMenu = menuBar->addMenu(tr("File"));
@@ -463,33 +465,49 @@ void MainWindow::createMenuBar()
     // Меню Кодировка
     QMenu* encodingMenu = menuBar->addMenu(tr("Encoding"));
     
-    // Автоопределение кодировки
+    // Автоопределение кодировки - работает даже без сохранения файла
     QAction* autoDetectAction = encodingMenu->addAction(tr("Auto Detect"));
-    autoDetectAction->setToolTip(tr("Автоматически определить кодировку файла"));
+    autoDetectAction->setToolTip(tr("Автоматически определить кодировку текста в редакторе"));
     connect(autoDetectAction, &QAction::triggered, [this]() {
-        if (!m_currentFile.isEmpty()) {
-            QFile file(m_currentFile);
-            if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                QTextStream in(&file);
-                in.setAutoDetectUnicode(true);
-                QByteArray bom = file.peek(4);
-                if (bom.startsWith(QByteArray::fromHex("EFBBBF"))) {
-                    in.setCodec("UTF-8");
-                } else if (bom.startsWith(QByteArray::fromHex("FFFE0000")) || bom.startsWith(QByteArray::fromHex("0000FEFF"))) {
-                    in.setCodec("UTF-32");
-                } else if (bom.startsWith(QByteArray::fromHex("FFFE")) || bom.startsWith(QByteArray::fromHex("FEFF"))) {
-                    in.setCodec("UTF-16");
-                } else {
-                    in.setAutoDetectUnicode(true);
-                }
-                QString content = in.readAll();
-                file.close();
-                m_markdownEditor->setPlainText(content);
-                m_statusBar->showMessage(tr("Кодировка определена автоматически: ") + in.codec()->name());
+        QString content = m_markdownEditor->toPlainText();
+        
+        // Пробуем определить кодировку путем перебора популярных кодировок
+        QList<QByteArray> codecNames = {
+            "UTF-8", "Windows-1251", "KOI8-R", "CP866", "ISO 8859-5",
+            "UTF-16", "UTF-32", "Windows-1252", "ISO 8859-1"
+        };
+        
+        QString detectedCodec = "UTF-8"; // По умолчанию
+        int bestScore = 0;
+        
+        for (const QByteArray& codecName : codecNames) {
+            QTextCodec* codec = QTextCodec::codecForName(codecName);
+            if (!codec) continue;
+            
+            // Кодируем и декодируем текст
+            QByteArray encoded = codec->fromUnicode(content);
+            QString decoded = codec->toUnicode(encoded);
+            
+            // Считаем сколько символов совпало
+            int score = 0;
+            for (int i = 0; i < qMin(content.length(), decoded.length()); i++) {
+                if (content[i] == decoded[i]) score++;
             }
-        } else {
-            m_statusBar->showMessage(tr("Сначала откройте файл"));
+            
+            if (score > bestScore) {
+                bestScore = score;
+                detectedCodec = codecName;
+            }
         }
+        
+        m_statusBar->showMessage(tr("Предполагаемая кодировка: ") + detectedCodec);
+        
+        // Показываем информацию в диалоге
+        QMessageBox::information(this, tr("Автоопределение кодировки"),
+            tr("Наиболее вероятная кодировка: %1\n\n"
+               "Текст содержит %2 символов.\n"
+               "Для изменения кодировки используйте меню Encoding.")
+            .arg(detectedCodec).arg(content.length()));
     });
     
     encodingMenu->addSeparator();
@@ -1698,11 +1716,6 @@ void MainWindow::changeTextColor()
  */
 void MainWindow::convertEncoding(const QString& codecName)
 {
-    if (m_currentFile.isEmpty()) {
-        QMessageBox::warning(this, tr("Ошибка"), tr("Сначала откройте файл для конвертации кодировки."));
-        return;
-    }
-    
     // Читаем текущий текст из редактора (он уже в Unicode)
     QString content = m_markdownEditor->toPlainText();
     
@@ -1735,30 +1748,44 @@ void MainWindow::convertEncoding(const QString& codecName)
         }
     }
     
-    // Сохраняем файл в новой кодировке
-    QFile file(m_currentFile);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::critical(this, tr("Ошибка"), tr("Не удалось сохранить файл."));
-        return;
+    // Если файл открыт - сохраняем в файл, иначе просто применяем кодировку к тексту
+    if (!m_currentFile.isEmpty()) {
+        // Сохраняем файл в новой кодировке
+        QFile file(m_currentFile);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QMessageBox::critical(this, tr("Ошибка"), tr("Не удалось сохранить файл."));
+            return;
+        }
+        
+        QTextStream out(&file);
+        out.setCodec(codecName.toUtf8());
+        
+        // Добавляем BOM для UTF-8, UTF-16, UTF-32
+        if (codecName.contains("UTF-8", Qt::CaseInsensitive)) {
+            out.setGenerateByteOrderMark(true);
+        } else if (codecName.contains("UTF-16", Qt::CaseInsensitive)) {
+            out.setGenerateByteOrderMark(true);
+        } else if (codecName.contains("UTF-32", Qt::CaseInsensitive)) {
+            out.setGenerateByteOrderMark(true);
+        }
+        
+        out << content;
+        file.close();
+        
+        m_statusBar->showMessage(tr("Файл конвертирован в кодировку: ") + codecName);
+        
+        // Перечитываем файл чтобы убедиться что всё корректно
+        openFile();
+    } else {
+        // Файл не открыт - просто показываем сообщение что кодировка будет применена при сохранении
+        m_statusBar->showMessage(tr("Кодировка %1 будет применена при сохранении файла").arg(codecName));
+        
+        // Для нового файла можно сразу перекодировать текст и показать результат
+        QString recodedContent = codec->toUnicode(codec->fromUnicode(content));
+        if (recodedContent != content) {
+            QMessageBox::information(this, tr("Информация"),
+                tr("Текст был перекодирован в %1. Некоторые символы могли измениться.").arg(codecName));
+        }
+        m_markdownEditor->setPlainText(recodedContent);
     }
-    
-    QTextStream out(&file);
-    out.setCodec(codecName.toUtf8());
-    
-    // Добавляем BOM для UTF-8, UTF-16, UTF-32
-    if (codecName.contains("UTF-8", Qt::CaseInsensitive)) {
-        out.setGenerateByteOrderMark(true);
-    } else if (codecName.contains("UTF-16", Qt::CaseInsensitive)) {
-        out.setGenerateByteOrderMark(true);
-    } else if (codecName.contains("UTF-32", Qt::CaseInsensitive)) {
-        out.setGenerateByteOrderMark(true);
-    }
-    
-    out << content;
-    file.close();
-    
-    m_statusBar->showMessage(tr("Файл конвертирован в кодировку: ") + codecName);
-    
-    // Перечитываем файл чтобы убедиться что всё корректно
-    openFile();
 }

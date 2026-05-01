@@ -11,9 +11,62 @@
 #include <QStatusBar>
 #include <QSplitter>
 #include <QTranslator>
+#include <QWidget>
+#include <QTextBlock>
 #include "markdownparser.h"
 #include "spellchecker.h"
 #include "helpwindow.h"
+#include "settings_dialog.h"
+
+/**
+ * @class LineNumberArea
+ * @brief Виджет для отображения номеров строк слева от редактора
+ */
+class LineNumberArea : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit LineNumberArea(QPlainTextEdit *editor);
+    
+    QSize sizeHint() const override;
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
+private:
+    QPlainTextEdit *textEditor;
+};
+
+/**
+ * @class PlainTextEditWithLineNumbers
+ * @brief QPlainTextEdit с поддержкой нумерации строк
+ */
+class PlainTextEditWithLineNumbers : public QPlainTextEdit
+{
+    Q_OBJECT
+public:
+    explicit PlainTextEditWithLineNumbers(QWidget *parent = nullptr);
+    
+    LineNumberArea* lineNumberArea() const { return m_lineNumberArea; }
+    
+    // Публичные методы-обертки для доступа к protected методам QPlainTextEdit
+    QTextBlock firstVisibleBlockPublic() const { return firstVisibleBlock(); }
+    QRectF blockBoundingGeometryPublic(const QTextBlock &block) const { return blockBoundingGeometry(block); }
+    QPointF contentOffsetPublic() const { return contentOffset(); }
+    QRectF blockBoundingRectPublic(const QTextBlock &block) const { return blockBoundingRect(block); }
+
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
+private slots:
+    void updateLineNumberAreaWidth(int newBlockCount);
+    void updateLineNumberArea(const QRect &rect, int dy);
+
+private:
+    LineNumberArea *m_lineNumberArea;
+    
+    friend class LineNumberArea;
+};
 
 /**
  * @class MainWindow
@@ -208,9 +261,24 @@ private slots:
     void showEditorContextMenu(const QPoint& pos);
     
     /**
+     * @brief Сделать выделенный текст ссылкой
+     */
+    void makeSelectedTextLink();
+    
+    /**
+     * @brief Обработчик изменения текста в WYSIWYG редакторе для синхронизации с Markdown
+     */
+    void onWysiwygTextChanged();
+    
+    /**
      * @brief Открытие окна справки
      */
     void showHelp();
+    
+    /**
+     * @brief Открытие диалога основных настроек
+     */
+    void showSettings();
     
     /**
      * @brief Изменение языка интерфейса
@@ -228,6 +296,26 @@ private slots:
      * @param codecName Название кодировки (например, "UTF-8", "Windows-1251")
      */
     void convertEncoding(const QString& codecName);
+    
+    /**
+     * @brief Переключение тёмной темы
+     */
+    void toggleDarkTheme();
+    
+    /**
+     * @brief Переключение видимости предпросмотра
+     */
+    void togglePreview();
+    
+    /**
+     * @brief Обновление предпросмотра
+     */
+    void updatePreview();
+    
+    /**
+     * @brief Экспорт в PDF
+     */
+    void exportToPdf();
     
 private:
     /**
@@ -249,6 +337,11 @@ private:
      * @brief Создание статусной строки
      */
     void createStatusBar();
+    
+    /**
+     * @brief Обновление информации в статусной строке
+     */
+    void updateStatusBarInfo();
     
     /**
      * @brief Применение стилей к предпросмотру
@@ -286,7 +379,7 @@ private:
     
     // Виджеты редактора
     QTextEdit* m_previewEditor;        ///< Виджет предпросмотра (WYSIWYG)
-    QPlainTextEdit* m_markdownEditor;  ///< Виджет редактора Markdown
+    PlainTextEditWithLineNumbers* m_markdownEditor;  ///< Виджет редактора Markdown с нумерацией строк
     QWidget* m_currentEditor;          ///< Текущий активный редактор
     
     // Парсер Markdown
@@ -297,11 +390,20 @@ private:
     QStatusBar* m_statusBar;           ///< Статусная строка
     QAction* m_wysiwygAction;          ///< Действие переключения в режим WYSIWYG
     QAction* m_markdownAction;         ///< Действие переключения в режим Markdown
+    QAction* m_darkThemeAction;        ///< Действие переключения тёмной темы
+    QAction* m_previewAction;          ///< Действие включения/выключения предпросмотра
+    
+    // Элементы статусной строки
+    QLabel* m_lineCountLabel;          ///< Метка количества строк
+    QLabel* m_encodingLabel;           ///< Метка кодировки
     
     // Состояние приложения
     bool m_isWysiwygMode;              ///< Флаг режима WYSIWYG
     QString m_currentFile;             ///< Путь к текущему файлу
+    QString m_currentEncoding;         ///< Текущая кодировка файла
     bool m_isModified;                 ///< Флаг изменений в документе
+    bool m_isDarkMode;                 ///< Флаг тёмной темы
+    bool m_isPreviewVisible;           ///< Флаг видимости предпросмотра
     
     // Проверка орфографии
     SpellChecker* m_spellChecker;      ///< Экземпляр проверки орфографии

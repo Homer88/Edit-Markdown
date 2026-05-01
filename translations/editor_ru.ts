@@ -156,6 +156,14 @@
         <translation>Удалить строку</translation>
     </message>
     <message>
+        <source>Insert Table</source>
+        <translation>Вставить таблицу</translation>
+    </message>
+    <message>
+        <source>Delete Table</source>
+        <translation>Удалить таблицу</translation>
+    </message>
+    <message>
         <source>Text Color</source>
         <translation>Цвет текста</translation>
     </message>
@@ -266,6 +274,138 @@
     <message>
         <source>Cursor is not inside a table.</source>
         <translation>Курсор находится вне таблицы.</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation>Отменить</translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation>Повторить</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation>Вырезать</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>Копировать</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Вставить</translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation>Выделить всё</translation>
+    </message>
+    <message>
+        <source>Make Link</source>
+        <translation>Сделать ссылкой</translation>
+    </message>
+    <message>
+        <source>Link Text:</source>
+        <translation>Текст ссылки:</translation>
+    </message>
+    <message>
+        <source>URL or File Path:</source>
+        <translation>URL или путь к файлу:</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Обзор...</translation>
+    </message>
+    <message>
+        <source>Select File</source>
+        <translation>Выберите файл</translation>
+    </message>
+    <message>
+        <source>All Files (*)</source>
+        <translation>Все файлы (*)</translation>
+    </message>
+    <message>
+        <source>WYSIWYG</source>
+        <translation>WYSIWYG</translation>
+    </message>
+    <message>
+        <source>Markdown</source>
+        <translation>Markdown</translation>
+    </message>
+    <message>
+        <source>Visual Editing Mode</source>
+        <translation>Режим визуального редактирования</translation>
+    </message>
+    <message>
+        <source>Markdown Editing Mode</source>
+        <translation>Режим редактирования Markdown</translation>
+    </message>
+    <message>
+        <source>Insert table and table operations</source>
+        <translation>Вставка таблицы и операции с таблицей</translation>
+    </message>
+    <message>
+        <source>Insert a row into the table</source>
+        <translation>Вставить строку в таблицу</translation>
+    </message>
+    <message>
+        <source>Insert a column into the table</source>
+        <translation>Вставить столбец в таблицу</translation>
+    </message>
+    <message>
+        <source>Delete a row from the table</source>
+        <translation>Удалить строку из таблицы</translation>
+    </message>
+    <message>
+        <source>Delete a column from the table</source>
+        <translation>Удалить столбец из таблицы</translation>
+    </message>
+    <message>
+        <source>Task</source>
+        <translation>Задача</translation>
+    </message>
+    <message>
+        <source>Insert task (checkbox)</source>
+        <translation>Вставить задачу (флажок)</translation>
+    </message>
+    <message>
+        <source>Special Chars</source>
+        <translation>Спецсимволы</translation>
+    </message>
+    <message>
+        <source>Insert special characters</source>
+        <translation>Вставить специальные символы</translation>
+    </message>
+    <message>
+        <source>Check Spelling (F7)</source>
+        <translation>Проверить орфографию (F7)</translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation>Настройки</translation>
+    </message>
+    <message>
+        <source>Basic Settings...</source>
+        <translation>Основные настройки...</translation>
+    </message>
+    <message>
+        <source>Encoding</source>
+        <translation>Кодировка</translation>
+    </message>
+    <message>
+        <source>Cyrillic</source>
+        <translation>Кириллица</translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation>Другие</translation>
+    </message>
+    <message>
+        <source>Lines: %1</source>
+        <translation>Строк: %1</translation>
+    </message>
+    <message>
+        <source>UTF-8</source>
+        <translation>UTF-8</translation>
     </message>
 </context>
 <context>

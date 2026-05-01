@@ -23,6 +23,87 @@
 #include <QStandardPaths>
 #include <QTextCodec>
 #include <QTextStream>
+#include <QPainter>
+#include <QTextBlock>
+#include <QStyleFactory>
+#include "settings.h"
+#include "settings_dialog.h"
+
+// Реализация LineNumberArea
+LineNumberArea::LineNumberArea(QPlainTextEdit *editor)
+    : QWidget(editor)
+{
+    textEditor = editor;
+}
+
+QSize LineNumberArea::sizeHint() const
+{
+    return QSize(textEditor->fontMetrics().horizontalAdvance(QLatin1Char('9')) * 4 + 10, 0);
+}
+
+void LineNumberArea::paintEvent(QPaintEvent *event)
+{
+    QPainter painter(this);
+    painter.fillRect(event->rect(), Qt::lightGray);
+    
+    PlainTextEditWithLineNumbers* editor = qobject_cast<PlainTextEditWithLineNumbers*>(textEditor);
+    if (!editor) return;
+    
+    QTextBlock block = editor->firstVisibleBlockPublic();
+    int blockNumber = block.blockNumber();
+    qreal top = qRound(editor->blockBoundingGeometryPublic(block).translated(editor->contentOffsetPublic()).top());
+    qreal bottom = top + qRound(editor->blockBoundingRectPublic(block).height());
+    
+    while (block.isValid() && top <= event->rect().bottom()) {
+        if (block.isVisible() && bottom >= event->rect().top()) {
+            QString number = QString::number(blockNumber + 1);
+            painter.setPen(Qt::black);
+            painter.drawText(0, top, width() - 5, textEditor->fontMetrics().height(),
+                             Qt::AlignRight | Qt::AlignVCenter, number);
+        }
+        
+        block = block.next();
+        top = bottom;
+        bottom = top + qRound(editor->blockBoundingRectPublic(block).height());
+        ++blockNumber;
+    }
+}
+
+// Реализация PlainTextEditWithLineNumbers
+PlainTextEditWithLineNumbers::PlainTextEditWithLineNumbers(QWidget *parent)
+    : QPlainTextEdit(parent)
+{
+    m_lineNumberArea = new LineNumberArea(this);
+    
+    connect(this, &QPlainTextEdit::blockCountChanged, this, &PlainTextEditWithLineNumbers::updateLineNumberAreaWidth);
+    connect(this, &QPlainTextEdit::updateRequest, this, &PlainTextEditWithLineNumbers::updateLineNumberArea);
+    
+    updateLineNumberAreaWidth(0);
+}
+
+void PlainTextEditWithLineNumbers::resizeEvent(QResizeEvent *event)
+{
+    QPlainTextEdit::resizeEvent(event);
+    
+    QRect cr = contentsRect();
+    m_lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), m_lineNumberArea->sizeHint().width(), cr.height()));
+}
+
+void PlainTextEditWithLineNumbers::updateLineNumberAreaWidth(int /* newBlockCount */)
+{
+    setViewportMargins(m_lineNumberArea->sizeHint().width(), 0, 0, 0);
+}
+
+void PlainTextEditWithLineNumbers::updateLineNumberArea(const QRect &rect, int dy)
+{
+    if (dy)
+        m_lineNumberArea->scroll(0, dy);
+    else
+        m_lineNumberArea->update(0, rect.y(), m_lineNumberArea->width(), rect.height());
+    
+    if (rect.contains(viewport()->rect()))
+        updateLineNumberAreaWidth(0);
+}
 
 /**
  * @brief Конструктор главного окна
@@ -38,11 +119,17 @@ MainWindow::MainWindow(QWidget *parent)
     , m_statusBar(nullptr)
     , m_wysiwygAction(nullptr)
     , m_markdownAction(nullptr)
+    , m_darkThemeAction(nullptr)
+    , m_previewAction(nullptr)
     , m_isWysiwygMode(false)
+    , m_currentFile("")
+    , m_currentEncoding("UTF-8")
     , m_isModified(false)
     , m_spellChecker(nullptr)
     , m_translator(new QTranslator(this))
     , m_currentLanguage("system")
+    , m_isDarkMode(false)
+    , m_isPreviewVisible(true)  // Предпросмотр включен по умолчанию
 {
     // Инициализация проверки орфографии с путями к словарям
     initSpellChecker();
@@ -88,8 +175,8 @@ void MainWindow::initUI()
     // Создаем сплиттер для разделения экрана
     QSplitter* splitter = new QSplitter(Qt::Horizontal, centralWidget);
     
-    // Создаем редактор Markdown (текстовый)
-    m_markdownEditor = new QPlainTextEdit(splitter);
+    // Создаем редактор Markdown (текстовый) с нумерацией строк
+    m_markdownEditor = new PlainTextEditWithLineNumbers(splitter);
     m_markdownEditor->setPlaceholderText("Введите текст в формате Markdown...");
     QFont monoFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     monoFont.setPointSize(12);
@@ -115,6 +202,9 @@ void MainWindow::initUI()
     
     // Подключаем сигнал изменения текста
     connect(m_markdownEditor, &QPlainTextEdit::textChanged, this, &MainWindow::onTextChanged);
+    
+    // Подключаем сигнал изменения текста в WYSIWYG редакторе для синхронизации с Markdown
+    connect(m_previewEditor, &QTextEdit::textChanged, this, &MainWindow::onWysiwygTextChanged);
 }
 
 /**
@@ -122,12 +212,19 @@ void MainWindow::initUI()
  */
 void MainWindow::createToolBar()
 {
+    // Удаляем существующую панель инструментов, чтобы избежать дублирования при смене языка
+    if (m_toolBar) {
+        removeToolBar(m_toolBar);
+        delete m_toolBar;
+        m_toolBar = nullptr;
+    }
+    
     m_toolBar = addToolBar("Formatting");
     m_toolBar->setMovable(false);
     
     // Кнопки форматирования текста
     QAction* boldAction = m_toolBar->addAction("B");
-    boldAction->setToolTip("Жирный текст (Ctrl+B)");
+    boldAction->setToolTip(tr("Bold (Ctrl+B)"));
     QFont boldFont = boldAction->font();
     boldFont.setBold(true);
     boldFont.setPointSize(12);
@@ -135,7 +232,7 @@ void MainWindow::createToolBar()
     connect(boldAction, &QAction::triggered, this, &MainWindow::insertBold);
     
     QAction* italicAction = m_toolBar->addAction("I");
-    italicAction->setToolTip("Курсив (Ctrl+I)");
+    italicAction->setToolTip(tr("Italic (Ctrl+I)"));
     QFont italicFont = italicAction->font();
     italicFont.setItalic(true);
     italicFont.setPointSize(12);
@@ -143,7 +240,7 @@ void MainWindow::createToolBar()
     connect(italicAction, &QAction::triggered, this, &MainWindow::insertItalic);
     
     QAction* strikeAction = m_toolBar->addAction("S");
-    strikeAction->setToolTip("Зачеркнутый текст");
+    strikeAction->setToolTip(tr("Strikethrough"));
     QFont strikeFont = strikeAction->font();
     strikeFont.setStrikeOut(true);
     strikeFont.setPointSize(12);
@@ -154,119 +251,111 @@ void MainWindow::createToolBar()
     
     // Кнопки заголовков
     QAction* h1Action = m_toolBar->addAction("H1");
-    h1Action->setToolTip("Заголовок 1 уровня");
+    h1Action->setToolTip(tr("Heading 1"));
     h1Action->setFont(QFont(h1Action->font().family(), 12, QFont::Bold));
     connect(h1Action, &QAction::triggered, this, &MainWindow::insertHeader1);
     
     QAction* h2Action = m_toolBar->addAction("H2");
-    h2Action->setToolTip("Заголовок 2 уровня");
+    h2Action->setToolTip(tr("Heading 2"));
     h2Action->setFont(QFont(h2Action->font().family(), 11, QFont::Bold));
     connect(h2Action, &QAction::triggered, this, &MainWindow::insertHeader2);
     
     QAction* h3Action = m_toolBar->addAction("H3");
-    h3Action->setToolTip("Заголовок 3 уровня");
+    h3Action->setToolTip(tr("Heading 3"));
     h3Action->setFont(QFont(h3Action->font().family(), 10, QFont::Bold));
     connect(h3Action, &QAction::triggered, this, &MainWindow::insertHeader3);
     
     m_toolBar->addSeparator();
     
     // Кнопки списков
-    QAction* bulletAction = m_toolBar->addAction("• Список");
-    bulletAction->setToolTip("Маркированный список");
+    QAction* bulletAction = m_toolBar->addAction(tr("• List"));
+    bulletAction->setToolTip(tr("Bullet List"));
     connect(bulletAction, &QAction::triggered, this, &MainWindow::insertBulletList);
     
-    QAction* numberAction = m_toolBar->addAction("1. Список");
-    numberAction->setToolTip("Нумерованный список");
+    QAction* numberAction = m_toolBar->addAction(tr("1. List"));
+    numberAction->setToolTip(tr("Numbered List"));
     connect(numberAction, &QAction::triggered, this, &MainWindow::insertNumberedList);
     
     m_toolBar->addSeparator();
     
     // Кнопки остальных элементов
-    QAction* quoteAction = m_toolBar->addAction("Цитата");
-    quoteAction->setToolTip("Цитата");
+    QAction* quoteAction = m_toolBar->addAction(tr("Quote"));
+    quoteAction->setToolTip(tr("Blockquote"));
     connect(quoteAction, &QAction::triggered, this, &MainWindow::insertBlockquote);
     
-    QAction* codeAction = m_toolBar->addAction("Код");
-    codeAction->setToolTip("Код");
+    QAction* codeAction = m_toolBar->addAction(tr("Code"));
+    codeAction->setToolTip(tr("Inline Code"));
     connect(codeAction, &QAction::triggered, this, &MainWindow::insertCode);
     
-    QAction* linkAction = m_toolBar->addAction("Ссылка");
-    linkAction->setToolTip("Вставить ссылку");
+    QAction* linkAction = m_toolBar->addAction(tr("Link"));
+    linkAction->setToolTip(tr("Insert Link"));
     connect(linkAction, &QAction::triggered, this, &MainWindow::insertLink);
     
-    QAction* imageAction = m_toolBar->addAction("Изображение");
-    imageAction->setToolTip("Вставить изображение");
+    QAction* imageAction = m_toolBar->addAction(tr("Image"));
+    imageAction->setToolTip(tr("Insert Image"));
     connect(imageAction, &QAction::triggered, this, &MainWindow::insertImage);
     
-    QAction* hrAction = m_toolBar->addAction("Линия");
-    hrAction->setToolTip("Горизонтальная линия");
+    QAction* hrAction = m_toolBar->addAction(tr("HR"));
+    hrAction->setToolTip(tr("Horizontal Rule"));
     connect(hrAction, &QAction::triggered, this, &MainWindow::insertHorizontalRule);
     
     m_toolBar->addSeparator();
     
-    // Кнопка таблицы
-    QAction* tableAction = m_toolBar->addAction("Таблица");
-    tableAction->setToolTip("Вставить таблицу");
-    connect(tableAction, &QAction::triggered, this, &MainWindow::insertTable);
+    // Кнопка таблицы с выпадающим меню
+    QToolButton* tableToolBtn = new QToolButton(m_toolBar);
+    tableToolBtn->setText(tr("Table"));
+    tableToolBtn->setToolTip(tr("Insert table and table operations"));
+    tableToolBtn->setPopupMode(QToolButton::MenuButtonPopup);
     
     // Создаем меню для операций с таблицей
-    QMenu* tableMenu = new QMenu(m_toolBar);
-    tableMenu->setTitle("▼");
-    tableMenu->setToolTip("Операции с таблицей");
+    QMenu* tableMenu = new QMenu(tableToolBtn);
     
-    QAction* insertRowAction = tableMenu->addAction("Вставить строку");
-    insertRowAction->setToolTip("Вставить строку в таблицу");
+    QAction* insertTableAction = tableMenu->addAction(tr("Insert Table"));
+    connect(insertTableAction, &QAction::triggered, this, &MainWindow::insertTable);
+    
+    tableMenu->addSeparator();
+    
+    QAction* insertRowAction = tableMenu->addAction(tr("Insert Row"));
+    insertRowAction->setToolTip(tr("Insert a row into the table"));
     connect(insertRowAction, &QAction::triggered, this, &MainWindow::insertTableRow);
     
-    QAction* insertColAction = tableMenu->addAction("Вставить столбец");
-    insertColAction->setToolTip("Вставить столбец в таблицу");
+    QAction* insertColAction = tableMenu->addAction(tr("Insert Column"));
+    insertColAction->setToolTip(tr("Insert a column into the table"));
     connect(insertColAction, &QAction::triggered, this, &MainWindow::insertTableColumn);
     
     tableMenu->addSeparator();
     
-    QAction* deleteRowAction = tableMenu->addAction("Удалить строку");
-    deleteRowAction->setToolTip("Удалить строку из таблицы");
+    QAction* deleteRowAction = tableMenu->addAction(tr("Delete Row"));
+    deleteRowAction->setToolTip(tr("Delete a row from the table"));
     connect(deleteRowAction, &QAction::triggered, this, &MainWindow::deleteTableRow);
     
-    QAction* deleteColAction = tableMenu->addAction("Удалить столбец");
-    deleteColAction->setToolTip("Удалить столбец из таблицы");
+    QAction* deleteColAction = tableMenu->addAction(tr("Delete Column"));
+    deleteColAction->setToolTip(tr("Delete a column from the table"));
     connect(deleteColAction, &QAction::triggered, this, &MainWindow::deleteTableColumn);
     
-    QWidget* tableWidget = new QWidget(m_toolBar);
-    QHBoxLayout* tableLayout = new QHBoxLayout(tableWidget);
-    tableLayout->setContentsMargins(0, 0, 0, 0);
-    tableLayout->setSpacing(2);
-    tableLayout->addWidget(new QPushButton("Таблица"));
-    QToolButton* tableToolBtn = new QToolButton();
     tableToolBtn->setMenu(tableMenu);
-    tableToolBtn->setPopupMode(QToolButton::InstantPopup);
-    tableToolBtn->setText("▼");
-    tableLayout->addWidget(tableToolBtn);
-    
-    // Заменяем действие таблицы на виджет с меню
-    m_toolBar->removeAction(tableAction);
-    m_toolBar->addWidget(tableWidget);
+    m_toolBar->addWidget(tableToolBtn);
     
     // Кнопка блока кода
-    QAction* codeBlockAction = m_toolBar->addAction("Блок кода");
-    codeBlockAction->setToolTip("Вставить многострочный блок кода");
+    QAction* codeBlockAction = m_toolBar->addAction(tr("Code Block"));
+    codeBlockAction->setToolTip(tr("Insert multi-line code block"));
     connect(codeBlockAction, &QAction::triggered, this, &MainWindow::insertCodeBlock);
     
     // Кнопка задачи
-    QAction* taskAction = m_toolBar->addAction("Задача");
-    taskAction->setToolTip("Вставить задачу (checkbox)");
+    QAction* taskAction = m_toolBar->addAction(tr("Task"));
+    taskAction->setToolTip(tr("Insert task (checkbox)"));
     connect(taskAction, &QAction::triggered, this, &MainWindow::insertTask);
     
     // Кнопка спецсимволов
-    QAction* specialAction = m_toolBar->addAction("Спецсимволы");
-    specialAction->setToolTip("Вставить специальные символы");
+    QAction* specialAction = m_toolBar->addAction(tr("Special Chars"));
+    specialAction->setToolTip(tr("Insert special characters"));
     connect(specialAction, &QAction::triggered, this, &MainWindow::insertSpecialCharacter);
     
     m_toolBar->addSeparator();
     
     // Кнопка проверки орфографии
     QAction* spellCheckAction = m_toolBar->addAction("ABC ✓");
-    spellCheckAction->setToolTip("Проверить орфографию (F7)");
+    spellCheckAction->setToolTip(tr("Check Spelling (F7)"));
     spellCheckAction->setFont(QFont(spellCheckAction->font().family(), 10, QFont::Bold));
     connect(spellCheckAction, &QAction::triggered, this, &MainWindow::checkSpelling);
     
@@ -277,15 +366,15 @@ void MainWindow::createToolBar()
     modeGroup->setExclusive(true);
     
     // Переключатели режимов
-    m_wysiwygAction = m_toolBar->addAction("WYSIWYG");
-    m_wysiwygAction->setToolTip("Режим визуального редактирования");
+    m_wysiwygAction = m_toolBar->addAction(tr("WYSIWYG"));
+    m_wysiwygAction->setToolTip(tr("Visual Editing Mode"));
     m_wysiwygAction->setCheckable(true);
     m_wysiwygAction->setChecked(m_isWysiwygMode);
     m_wysiwygAction->setActionGroup(modeGroup);
     connect(m_wysiwygAction, &QAction::toggled, this, &MainWindow::toggleWysiwygMode);
     
-    m_markdownAction = m_toolBar->addAction("Markdown");
-    m_markdownAction->setToolTip("Режим редактирования Markdown");
+    m_markdownAction = m_toolBar->addAction(tr("Markdown"));
+    m_markdownAction->setToolTip(tr("Markdown Editing Mode"));
     m_markdownAction->setCheckable(true);
     m_markdownAction->setChecked(!m_isWysiwygMode);
     m_markdownAction->setActionGroup(modeGroup);
@@ -423,12 +512,32 @@ void MainWindow::createMenuBar()
     m_wysiwygAction->setActionGroup(menuModeGroup);
     connect(m_wysiwygAction, &QAction::triggered, this, &MainWindow::toggleWysiwygMode);
     
+    // Действие для предпросмотра (сплит-режим)
+    m_previewAction = viewMenu->addAction(tr("Show Preview"));
+    m_previewAction->setCheckable(true);
+    m_previewAction->setChecked(m_isPreviewVisible);
+    m_previewAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_P));
+    connect(m_previewAction, &QAction::triggered, this, &MainWindow::togglePreview);
+    
+    // Действие для тёмной темы
+    m_darkThemeAction = viewMenu->addAction(tr("Dark Theme"));
+    m_darkThemeAction->setCheckable(true);
+    m_darkThemeAction->setChecked(m_isDarkMode);
+    m_darkThemeAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_D));
+    connect(m_darkThemeAction, &QAction::toggled, this, &MainWindow::toggleDarkTheme);
+    
     // Меню Справка
     QMenu* helpMenu = menuBar->addMenu(tr("Help"));
     
     QAction* helpAction = helpMenu->addAction(tr("Help..."));
     helpAction->setShortcut(QKeySequence::HelpContents);
     connect(helpAction, &QAction::triggered, this, &MainWindow::showHelp);
+    
+    // Меню Настройки
+    QMenu* settingsMenu = menuBar->addMenu(tr("Settings"));
+    
+    QAction* settingsAction = settingsMenu->addAction(tr("Basic Settings..."));
+    connect(settingsAction, &QAction::triggered, this, &MainWindow::showSettings);
     
     // Подменю языков - теперь заполняется динамически
     QMenu* langMenu = helpMenu->addMenu(tr("Language"));
@@ -646,7 +755,42 @@ void MainWindow::createMenuBar()
 void MainWindow::createStatusBar()
 {
     m_statusBar = statusBar();
-    m_statusBar->showMessage("Готов к работе");
+    
+    // Создаем метку для количества строк
+    m_lineCountLabel = new QLabel(this);
+    m_lineCountLabel->setText(tr("Lines: 0"));
+    m_statusBar->addPermanentWidget(m_lineCountLabel);
+    
+    // Создаем метку для кодировки
+    m_encodingLabel = new QLabel(this);
+    m_encodingLabel->setText("UTF-8");
+    m_statusBar->addPermanentWidget(m_encodingLabel);
+    
+    m_statusBar->showMessage(tr("Ready"));
+    
+    // Подключаем обновление счетчика строк
+    connect(m_markdownEditor, &QPlainTextEdit::textChanged, this, [this]() {
+        int lineCount = m_markdownEditor->blockCount();
+        m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+    });
+    
+    // Инициализируем счетчик при создании
+    int lineCount = m_markdownEditor->blockCount();
+    m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+}
+
+/**
+ * @brief Обновление информации в статусной строке
+ */
+void MainWindow::updateStatusBarInfo()
+{
+    // Обновляем количество строк
+    int lineCount = m_markdownEditor->blockCount();
+    m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+    
+    // Обновляем кодировку из настроек
+    const auto& settings = Settings::instance();
+    m_encodingLabel->setText(settings.defaultEncoding());
 }
 
 /**
@@ -849,11 +993,9 @@ void MainWindow::onTextChanged()
         updateWindowTitle();
     }
     
-    // Обновляем предпросмотр только если мы в режиме Markdown
-    if (!m_isWysiwygMode) {
-        QString markdownText = m_markdownEditor->toPlainText();
-        QString htmlText = m_parser->parse(markdownText);
-        m_previewEditor->setHtml(htmlText);
+    // Обновляем предпросмотр только если мы в режиме Markdown и видимость предпросмотра включена
+    if (!m_isWysiwygMode && m_isPreviewVisible) {
+        updatePreview();
     }
     
     // Обновляем статусную строку
@@ -875,6 +1017,11 @@ void MainWindow::toggleWysiwygMode()
     m_isWysiwygMode = true;
     m_wysiwygAction->setChecked(true);
     m_markdownAction->setChecked(false);
+    
+    // Синхронизируем содержимое: конвертируем Markdown в HTML для WYSIWYG редактора
+    QString markdownText = m_markdownEditor->toPlainText();
+    QString htmlText = m_parser->parse(markdownText);
+    m_previewEditor->setHtml(htmlText);
     
     // Скрываем редактор Markdown, показываем предпросмотр как редактор
     m_markdownEditor->hide();
@@ -932,9 +1079,9 @@ void MainWindow::openFile()
 {
     QString fileName = QFileDialog::getOpenFileName(
         this,
-        "Открыть файл",
+        tr("Open File"),
         "",
-        "Markdown файлы (*.md *.markdown *.txt);;Все файлы (*)"
+        tr("Markdown files (*.md *.markdown *.txt);;All files (*)")
     );
     
     if (fileName.isEmpty()) {
@@ -942,37 +1089,125 @@ void MainWindow::openFile()
     }
     
     QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::critical(this, "Ошибка", "Не удалось открыть файл");
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, tr("Error"), tr("Failed to open file"));
         return;
     }
     
-    // Автоопределение кодировки
-    QTextStream in(&file);
-    in.setAutoDetectUnicode(true);  // Включает автоопределение UTF-8, UTF-16, UTF-32 и системной кодировки
+    QByteArray rawData = file.readAll();
+    file.close();
     
-    // Проверяем наличие BOM для более точного определения
-    QByteArray bom = file.peek(4);
+    // Получаем кодировку по умолчанию из настроек
+    Settings& settings = Settings::instance();
+    QString defaultEncoding = settings.defaultEncoding();
+    
+    QTextCodec* codec = nullptr;
+    QString content;
+    bool ok = false;
+    
+    // Пробуем определить кодировку по BOM
+    QByteArray bom = rawData.left(4);
     if (bom.startsWith(QByteArray::fromHex("EFBBBF"))) {
-        in.setCodec("UTF-8");
+        codec = QTextCodec::codecForName("UTF-8");
+        content = codec->toUnicode(rawData);
+        ok = true;
     } else if (bom.startsWith(QByteArray::fromHex("FFFE0000")) || bom.startsWith(QByteArray::fromHex("0000FEFF"))) {
-        in.setCodec("UTF-32");
+        codec = QTextCodec::codecForName("UTF-32");
+        content = codec->toUnicode(rawData);
+        ok = true;
     } else if (bom.startsWith(QByteArray::fromHex("FFFE")) || bom.startsWith(QByteArray::fromHex("FEFF"))) {
-        in.setCodec("UTF-16");
+        codec = QTextCodec::codecForName("UTF-16");
+        content = codec->toUnicode(rawData);
+        ok = true;
     } else {
-        // Если BOM нет, пробуем определить по содержимому или используем системную
-        in.setAutoDetectUnicode(true);
+        // Если BOM нет, пробуем кодировку по умолчанию
+        codec = QTextCodec::codecForName(defaultEncoding.toUtf8());
+        if (codec) {
+            content = codec->toUnicode(rawData);
+            // Проверяем, нет ли символов замены (replacement characters)
+            if (!content.contains(QChar(0xFFFD))) {
+                ok = true;
+            }
+        }
+        
+        // Если не получилось или есть символы замены, пробуем автоопределение
+        if (!ok) {
+            // Пробуем UTF-8 без BOM
+            codec = QTextCodec::codecForName("UTF-8");
+            content = codec->toUnicode(rawData);
+            if (!content.contains(QChar(0xFFFD))) {
+                ok = true;
+            } else {
+                // Пробуем системную кодировку
+                codec = QTextCodec::codecForLocale();
+                content = codec->toUnicode(rawData);
+                if (!content.contains(QChar(0xFFFD))) {
+                    ok = true;
+                    defaultEncoding = QString(codec->name());
+                } else {
+                    // Если всё ещё есть проблемы, показываем диалог выбора кодировки
+                    QStringList codecNames = {
+                        "UTF-8", "Windows-1251", "Windows-1252", "KOI8-R", "IBM866", 
+                        "ISO-8859-1", "ISO-8859-5", "UTF-16", "UTF-32"
+                    };
+                    
+                    bool codecOk = false;
+                    while (!codecOk) {
+                        QString selectedCodec = QInputDialog::getItem(
+                            this,
+                            tr("Select Encoding"),
+                            tr("Could not auto-detect encoding. Please select:"),
+                            codecNames,
+                            0,
+                            false,
+                            &codecOk
+                        );
+                        
+                        if (!codecOk) {
+                            return; // Пользователь отменил
+                        }
+                        
+                        codec = QTextCodec::codecForName(selectedCodec.toUtf8());
+                        if (codec) {
+                            content = codec->toUnicode(rawData);
+                            if (!content.contains(QChar(0xFFFD))) {
+                                ok = true;
+                                defaultEncoding = selectedCodec;
+                            } else {
+                                int reply = QMessageBox::question(
+                                    this,
+                                    tr("Invalid Encoding"),
+                                    tr("Selected encoding (%1) produced invalid characters. Try another?").arg(selectedCodec),
+                                    QMessageBox::Yes | QMessageBox::No
+                                );
+                                if (reply == QMessageBox::No) {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     
-    QString content = in.readAll();
-    file.close();
+    if (!ok || content.isEmpty()) {
+        QMessageBox::critical(this, tr("Error"), tr("Failed to decode file content"));
+        return;
+    }
     
     m_markdownEditor->setPlainText(content);
     m_currentFile = fileName;
+    m_currentEncoding = codec ? QString(codec->name()) : defaultEncoding;
     m_isModified = false;
     updateWindowTitle();
     
-    m_statusBar->showMessage("Файл открыт: " + fileName);
+    // Обновляем метки в статус-баре
+    int lineCount = m_markdownEditor->blockCount();
+    m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+    m_encodingLabel->setText(m_currentEncoding);
+    
+    m_statusBar->showMessage(tr("File opened: ") + fileName + " (" + m_currentEncoding + ")");
 }
 
 /**
@@ -1001,7 +1236,7 @@ void MainWindow::saveFile()
     m_isModified = false;
     updateWindowTitle();
     
-    m_statusBar->showMessage("Файл сохранен: " + m_currentFile);
+    m_statusBar->showMessage(tr("File saved: ") + m_currentFile);
 }
 
 /**
@@ -1055,7 +1290,10 @@ void MainWindow::newFile()
     m_isModified = false;
     updateWindowTitle();
     
-    m_statusBar->showMessage("Новый документ создан");
+    // Сбрасываем счетчик строк для нового документа
+    m_lineCountLabel->setText(tr("Lines: %1").arg(0));
+    
+    m_statusBar->showMessage(tr("New document created"));
 }
 
 /**
@@ -1121,7 +1359,18 @@ void MainWindow::insertHeader3()
  */
 void MainWindow::insertBulletList()
 {
-    insertMarkdownAtCursor("- ");
+    if (m_isWysiwygMode) {
+        // Режим WYSIWYG - используем QTextEdit
+        QTextCursor cursor = m_previewEditor->textCursor();
+        QTextListFormat listFormat;
+        listFormat.setStyle(QTextListFormat::ListDisc);
+        cursor.createList(listFormat);
+        m_previewEditor->setTextCursor(cursor);
+        m_previewEditor->setFocus();
+    } else {
+        // Режим Markdown - вставляем текст
+        insertMarkdownAtCursor("- ");
+    }
 }
 
 /**
@@ -1129,7 +1378,18 @@ void MainWindow::insertBulletList()
  */
 void MainWindow::insertNumberedList()
 {
-    insertMarkdownAtCursor("1. ");
+    if (m_isWysiwygMode) {
+        // Режим WYSIWYG - используем QTextEdit
+        QTextCursor cursor = m_previewEditor->textCursor();
+        QTextListFormat listFormat;
+        listFormat.setStyle(QTextListFormat::ListDecimal);
+        cursor.createList(listFormat);
+        m_previewEditor->setTextCursor(cursor);
+        m_previewEditor->setFocus();
+    } else {
+        // Режим Markdown - вставляем текст
+        insertMarkdownAtCursor("1. ");
+    }
 }
 
 /**
@@ -1153,7 +1413,114 @@ void MainWindow::insertCode()
  */
 void MainWindow::insertLink()
 {
-    insertMarkdownFormatting("[", "](url)");
+    if (m_isWysiwygMode) {
+        QTextCursor cursor = m_previewEditor->textCursor();
+        QString selectedText = cursor.selectedText();
+        
+        QDialog dialog(this);
+        dialog.setWindowTitle(tr("Добавление ссылки"));
+        dialog.setMinimumWidth(400);
+        
+        QVBoxLayout* layout = new QVBoxLayout(&dialog);
+        
+        QLabel* textLabel = new QLabel(tr("Текст ссылки:"), &dialog);
+        QLineEdit* textEdit = new QLineEdit(selectedText, &dialog);
+        
+        QLabel* urlLabel = new QLabel(tr("URL или путь к файлу:"), &dialog);
+        QHBoxLayout* urlLayout = new QHBoxLayout();
+        QLineEdit* urlEdit = new QLineEdit(&dialog);
+        QPushButton* browseButton = new QPushButton(tr("Обзор..."), &dialog);
+        urlLayout->addWidget(urlEdit);
+        urlLayout->addWidget(browseButton);
+        
+        connect(browseButton, &QPushButton::clicked, this, [&urlEdit, this]() {
+            QString fileName = QFileDialog::getOpenFileName(this, tr("Выберите файл"), "", tr("Все файлы (*)"));
+            if (!fileName.isEmpty()) {
+                urlEdit->setText(fileName);
+            }
+        });
+        
+        QHBoxLayout* buttonLayout = new QHBoxLayout();
+        buttonLayout->addStretch();
+        QPushButton* okButton = new QPushButton(tr("ОК"), &dialog);
+        QPushButton* cancelButton = new QPushButton(tr("Отмена"), &dialog);
+        buttonLayout->addWidget(okButton);
+        buttonLayout->addWidget(cancelButton);
+        
+        layout->addWidget(textLabel);
+        layout->addWidget(textEdit);
+        layout->addWidget(urlLabel);
+        layout->addLayout(urlLayout);
+        layout->addLayout(buttonLayout);
+        
+        connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+        connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+        
+        if (dialog.exec() == QDialog::Accepted) {
+            QString text = textEdit->text();
+            QString url = urlEdit->text();
+            
+            if (!text.isEmpty() && !url.isEmpty()) {
+                if (cursor.hasSelection()) {
+                    cursor.insertHtml(QString("<a href=\"%1\">%2</a>").arg(url, text));
+                } else {
+                    cursor.insertHtml(QString("<a href=\"%1\">%2</a>").arg(url, text));
+                }
+                m_previewEditor->setTextCursor(cursor);
+            }
+        }
+    } else {
+        // Для режима Markdown
+        QString selectedText = m_markdownEditor->textCursor().selectedText();
+        
+        QDialog dialog(this);
+        dialog.setWindowTitle(tr("Добавление ссылки"));
+        dialog.setMinimumWidth(400);
+        
+        QVBoxLayout* layout = new QVBoxLayout(&dialog);
+        
+        QLabel* textLabel = new QLabel(tr("Текст ссылки:"), &dialog);
+        QLineEdit* textEdit = new QLineEdit(selectedText, &dialog);
+        
+        QLabel* urlLabel = new QLabel(tr("URL или путь к файлу:"), &dialog);
+        QHBoxLayout* urlLayout = new QHBoxLayout();
+        QLineEdit* urlEdit = new QLineEdit(&dialog);
+        QPushButton* browseButton = new QPushButton(tr("Обзор..."), &dialog);
+        urlLayout->addWidget(urlEdit);
+        urlLayout->addWidget(browseButton);
+        
+        connect(browseButton, &QPushButton::clicked, this, [&urlEdit, this]() {
+            QString fileName = QFileDialog::getOpenFileName(this, tr("Выберите файл"), "", tr("Все файлы (*)"));
+            if (!fileName.isEmpty()) {
+                urlEdit->setText(fileName);
+            }
+        });
+        
+        QHBoxLayout* buttonLayout = new QHBoxLayout();
+        buttonLayout->addStretch();
+        QPushButton* okButton = new QPushButton(tr("ОК"), &dialog);
+        QPushButton* cancelButton = new QPushButton(tr("Отмена"), &dialog);
+        buttonLayout->addWidget(okButton);
+        buttonLayout->addWidget(cancelButton);
+        
+        layout->addWidget(textLabel);
+        layout->addWidget(textEdit);
+        layout->addWidget(urlLabel);
+        layout->addLayout(urlLayout);
+        layout->addLayout(buttonLayout);
+        
+        connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+        connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+        
+        if (dialog.exec() == QDialog::Accepted) {
+            QString text = textEdit->text();
+            QString url = urlEdit->text();
+            
+            if (!text.isEmpty() && !url.isEmpty()) {
+                insertMarkdownAtCursor(QString("[%1](%2)").arg(text, url));
+            }
+        }
+    }
 }
 
 /**
@@ -1235,7 +1602,7 @@ void MainWindow::insertTable()
     } else {
         // В режиме Markdown вставляем Markdown таблицу
         QString table = "\n| Заголовок 1 | Заголовок 2 | Заголовок 3 |\n"
-                        "|-------------|-------------|-------------|\n"
+                        "|---|---|---|\n"
                         "| Ячейка 1    | Ячейка 2    | Ячейка 3    |\n"
                         "| Ячейка 4    | Ячейка 5    | Ячейка 6    |\n\n";
         insertMarkdownAtCursor(table);
@@ -1572,7 +1939,27 @@ void MainWindow::insertMarkdownFormatting(const QString& prefix, const QString& 
 void MainWindow::insertMarkdownAtCursor(const QString& text)
 {
     QTextCursor cursor = m_markdownEditor->textCursor();
+    int start = cursor.position();
     cursor.insertText(text);
+    
+    // Перемещаем курсор в начало вставленного текста (после заголовков таблицы)
+    // Для таблиц перемещаем курсор в первую ячейку содержимого
+    if (text.contains("| Заголовок") && text.contains("|---|")) {
+        // Находим позицию после строки разделителя
+        QString insertedText = text;
+        int firstNewline = insertedText.indexOf('\n');
+        int secondNewline = insertedText.indexOf('\n', firstNewline + 1);
+        if (secondNewline != -1) {
+            // Позиция после заголовка и разделителя, в начале первой строки данных
+            cursor.setPosition(start + secondNewline + 1);
+            // Выделяем первую ячейку для удобства редактирования
+            int cellEnd = insertedText.indexOf('|', secondNewline + 1);
+            if (cellEnd != -1 && cellEnd > secondNewline + 1) {
+                cursor.setPosition(start + cellEnd - 1, QTextCursor::KeepAnchor);
+            }
+        }
+    }
+    
     m_markdownEditor->setTextCursor(cursor);
     m_markdownEditor->setFocus();
 }
@@ -1714,6 +2101,29 @@ void MainWindow::showHelp()
 }
 
 /**
+ * @brief Открытие диалога основных настроек
+ */
+void MainWindow::showSettings()
+{
+    SettingsDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        // Применяем новый размер шрифта
+        QFont font = m_markdownEditor->font();
+        font.setPointSize(dialog.fontSize());
+        m_markdownEditor->setFont(font);
+        m_previewEditor->setFont(font);
+        
+        // Если язык изменился, перезагружаем интерфейс
+        if (dialog.language() != m_currentLanguage) {
+            changeLanguage(dialog.language());
+        }
+        
+        // Обновляем статус-бар с новой кодировкой по умолчанию
+        updateStatusBarInfo();
+    }
+}
+
+/**
  * @brief Показать контекстное меню редактора при клике правой кнопкой
  * @param pos Позиция курсора в виджете
  */
@@ -1750,24 +2160,117 @@ void MainWindow::showEditorContextMenu(const QPoint& pos)
     selectAllAction->setShortcut(QKeySequence::SelectAll);
     connect(selectAllAction, &QAction::triggered, m_markdownEditor, &QPlainTextEdit::selectAll);
     
+    // Добавляем пункт "Сделать ссылкой" если текст выделен
+    QString selectedText = m_markdownEditor->textCursor().selectedText();
+    if (!selectedText.isEmpty()) {
+        contextMenu.addSeparator();
+        QAction* makeLinkAction = contextMenu.addAction(tr("Сделать ссылкой"));
+        connect(makeLinkAction, &QAction::triggered, this, &MainWindow::makeSelectedTextLink);
+    }
+    
     // --- Table Operations Submenu ---
     contextMenu.addSeparator();
     QMenu *tableMenu = contextMenu.addMenu(tr("Table"));
     
+    QAction *insertRowAction = tableMenu->addAction(tr("Insert Row"));
+    connect(insertRowAction, &QAction::triggered, this, &MainWindow::insertTableRow);
+    
+    QAction *insertColAction = tableMenu->addAction(tr("Insert Column"));
+    connect(insertColAction, &QAction::triggered, this, &MainWindow::insertTableColumn);
+    
+    QAction *deleteRowAction = tableMenu->addAction(tr("Delete Row"));
+    connect(deleteRowAction, &QAction::triggered, this, &MainWindow::deleteTableRow);
+    
+    QAction *deleteColAction = tableMenu->addAction(tr("Delete Column"));
+    connect(deleteColAction, &QAction::triggered, this, &MainWindow::deleteTableColumn);
+    
+    tableMenu->addSeparator();
     QAction *insertTableAction = tableMenu->addAction(tr("Insert Table"));
-    connect(insertTableAction, &QAction::triggered, this, [this]() {
-        insertTable();
-    });
-
+    connect(insertTableAction, &QAction::triggered, this, &MainWindow::insertTable);
+    
     QAction *deleteTableAction = tableMenu->addAction(tr("Delete Table"));
-    connect(deleteTableAction, &QAction::triggered, this, [this]() {
-        deleteTable();
-    });
+    connect(deleteTableAction, &QAction::triggered, this, &MainWindow::deleteTable);
     
     // Показываем меню в позиции курсора
     QWidget* editor = qobject_cast<QWidget*>(sender());
     if (editor) {
         contextMenu.exec(editor->mapToGlobal(pos));
+    }
+}
+
+/**
+ * @brief Сделать выделенный текст ссылкой
+ */
+void MainWindow::makeSelectedTextLink()
+{
+    QString selectedText;
+    
+    if (m_isWysiwygMode) {
+        selectedText = m_previewEditor->textCursor().selectedText();
+    } else {
+        selectedText = m_markdownEditor->textCursor().selectedText();
+    }
+    
+    if (selectedText.isEmpty()) {
+        return;
+    }
+    
+    // Создаем диалог для ввода ссылки
+    QDialog linkDialog(this);
+    linkDialog.setWindowTitle(tr("Добавление ссылки"));
+    linkDialog.setMinimumWidth(400);
+    
+    QVBoxLayout* layout = new QVBoxLayout(&linkDialog);
+    
+    QLabel* textLabel = new QLabel(tr("Текст ссылки:"), &linkDialog);
+    QLineEdit* textEdit = new QLineEdit(selectedText, &linkDialog);
+    
+    QLabel* urlLabel = new QLabel(tr("URL или путь к файлу:"), &linkDialog);
+    QHBoxLayout* urlLayout = new QHBoxLayout();
+    QLineEdit* urlEdit = new QLineEdit(&linkDialog);
+    QPushButton* browseButton = new QPushButton(tr("Обзор..."), &linkDialog);
+    urlLayout->addWidget(urlEdit);
+    urlLayout->addWidget(browseButton);
+    
+    // Кнопка обзора файла
+    connect(browseButton, &QPushButton::clicked, this, [&urlEdit, this]() {
+        QString fileName = QFileDialog::getOpenFileName(this, tr("Выберите файл"), "", tr("Все файлы (*)"));
+        if (!fileName.isEmpty()) {
+            urlEdit->setText(fileName);
+        }
+    });
+    
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    buttonLayout->addStretch();
+    QPushButton* okButton = new QPushButton(tr("ОК"), &linkDialog);
+    QPushButton* cancelButton = new QPushButton(tr("Отмена"), &linkDialog);
+    buttonLayout->addWidget(okButton);
+    buttonLayout->addWidget(cancelButton);
+    
+    layout->addWidget(textLabel);
+    layout->addWidget(textEdit);
+    layout->addWidget(urlLabel);
+    layout->addLayout(urlLayout);
+    layout->addLayout(buttonLayout);
+    
+    connect(okButton, &QPushButton::clicked, &linkDialog, &QDialog::accept);
+    connect(cancelButton, &QPushButton::clicked, &linkDialog, &QDialog::reject);
+    
+    if (linkDialog.exec() == QDialog::Accepted) {
+        QString linkText = textEdit->text();
+        QString url = urlEdit->text();
+        
+        if (!url.isEmpty()) {
+            if (m_isWysiwygMode) {
+                QTextCursor cursor = m_previewEditor->textCursor();
+                cursor.insertHtml(QString("<a href=\"%1\">%2</a>").arg(url, linkText));
+                m_previewEditor->setTextCursor(cursor);
+            } else {
+                QTextCursor cursor = m_markdownEditor->textCursor();
+                QString linkMarkdown = QString("[%1](%2)").arg(linkText, url);
+                cursor.insertText(linkMarkdown);
+            }
+        }
     }
 }
 
@@ -1846,6 +2349,15 @@ void MainWindow::loadTranslations(const QString& language)
 void MainWindow::changeLanguage(const QString& language)
 {
     loadTranslations(language);
+    
+    // Обновляем текст в статусной строке после смены языка
+    if (m_lineCountLabel) {
+        int lineCount = m_markdownEditor->blockCount();
+        m_lineCountLabel->setText(tr("Lines: %1").arg(lineCount));
+    }
+    if (m_statusBar) {
+        m_statusBar->showMessage(tr("Ready"));
+    }
 }
 
 /**
@@ -1939,20 +2451,199 @@ void MainWindow::convertEncoding(const QString& codecName)
         out << content;
         file.close();
         
-        m_statusBar->showMessage(tr("Файл конвертирован в кодировку: ") + codecName);
+        // Обновляем метку кодировки в статусной строке
+        m_encodingLabel->setText(codecName);
+        
+        m_statusBar->showMessage(tr("File converted to encoding: ") + codecName);
         
         // Перечитываем файл чтобы убедиться что всё корректно
         openFile();
     } else {
         // Файл не открыт - просто показываем сообщение что кодировка будет применена при сохранении
-        m_statusBar->showMessage(tr("Кодировка %1 будет применена при сохранении файла").arg(codecName));
+        // Обновляем метку кодировки
+        m_encodingLabel->setText(codecName);
+        m_statusBar->showMessage(tr("Encoding %1 will be applied when saving file").arg(codecName));
         
         // Для нового файла можно сразу перекодировать текст и показать результат
         QString recodedContent = codec->toUnicode(codec->fromUnicode(content));
         if (recodedContent != content) {
-            QMessageBox::information(this, tr("Информация"),
-                tr("Текст был перекодирован в %1. Некоторые символы могли измениться.").arg(codecName));
+            QMessageBox::information(this, tr("Information"),
+                tr("Text was recoded to %1. Some characters may have changed.").arg(codecName));
         }
         m_markdownEditor->setPlainText(recodedContent);
     }
+}
+
+/**
+ * @brief Обработчик изменения текста в WYSIWYG редакторе для синхронизации с Markdown
+ */
+void MainWindow::onWysiwygTextChanged()
+{
+    if (!m_isWysiwygMode) {
+        // Если мы не в режиме WYSIWYG, игнорируем изменения
+        return;
+    }
+    
+    // Получаем HTML из WYSIWYG редактора и конвертируем обратно в Markdown
+    QString htmlText = m_previewEditor->toHtml();
+    QString markdownText = m_parser->htmlToMarkdown(htmlText);
+    
+    // Блокируем сигналы чтобы избежать рекурсивного вызова
+    m_markdownEditor->blockSignals(true);
+    m_markdownEditor->setPlainText(markdownText);
+    m_markdownEditor->blockSignals(false);
+    
+    // Обновляем статус модификации
+    m_isModified = true;
+    updateWindowTitle();
+}
+
+/**
+ * @brief Переключение тёмной темы
+ */
+void MainWindow::toggleDarkTheme()
+{
+    m_isDarkMode = !m_isDarkMode;
+    m_darkThemeAction->setChecked(m_isDarkMode);
+    
+    if (m_isDarkMode) {
+        // Включаем тёмную тему
+        qApp->setStyle(QStyleFactory::create("Fusion"));
+        
+        QPalette darkPalette;
+        darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::WindowText, Qt::white);
+        darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
+        darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+        darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+        darkPalette.setColor(QPalette::Text, Qt::white);
+        darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::ButtonText, Qt::white);
+        darkPalette.setColor(QPalette::BrightText, Qt::black);
+        darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+
+        qApp->setPalette(darkPalette);
+        qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+        
+        // Применяем тёмные стили к предпросмотру
+        m_previewEditor->setStyleSheet(
+            "QTextEdit { background-color: #2b2b2b; color: #e0e0e0; }"
+        );
+        m_markdownEditor->setStyleSheet(
+            "QPlainTextEdit { background-color: #1e1e1e; color: #d4d4d4; }"
+        );
+    } else {
+        // Выключаем тёмную тему (возвращаем системную)
+        qApp->setPalette(QPalette());
+        qApp->setStyle(QStyleFactory::create(""));
+        qApp->setStyleSheet("");
+        
+        // Возвращаем светлые стили
+        m_previewEditor->setStyleSheet("");
+        m_markdownEditor->setStyleSheet("");
+    }
+    
+    // Обновляем предпросмотр если он видим
+    if (m_isPreviewVisible) {
+        updatePreview();
+    }
+}
+
+/**
+ * @brief Переключение видимости предпросмотра
+ */
+void MainWindow::togglePreview()
+{
+    m_isPreviewVisible = !m_isPreviewVisible;
+    m_previewAction->setChecked(m_isPreviewVisible);
+    
+    // Получаем сплиттер и управляем видимостью панелей
+    QSplitter* splitter = qobject_cast<QSplitter*>(centralWidget()->layout()->itemAt(0)->widget());
+    if (splitter) {
+        if (m_isPreviewVisible) {
+            m_previewEditor->show();
+            // Восстанавливаем размеры 50/50
+            splitter->setSizes(QList<int>() << 600 << 600);
+            updatePreview();
+        } else {
+            m_previewEditor->hide();
+            // Растягиваем редактор на всю ширину
+            splitter->setSizes(QList<int>() << 1200 << 0);
+        }
+    }
+}
+
+/**
+ * @brief Обновление предпросмотра
+ */
+void MainWindow::updatePreview()
+{
+    if (!m_isPreviewVisible) return;
+    
+    QString markdownText = m_markdownEditor->toPlainText();
+    QString htmlContent = m_parser->parse(markdownText);
+    
+    // Формируем полный HTML с базовыми стилями
+    QString fullHtml = R"(
+        <html>
+        <head>
+            <style>
+                body { font-family: sans-serif; padding: 20px; line-height: 1.6; )";
+    
+    if (m_isDarkMode) {
+        fullHtml += "background-color: #2b2b2b; color: #e0e0e0;";
+    } else {
+        fullHtml += "background-color: #ffffff; color: #333333;";
+    }
+    
+    fullHtml += R"( }
+                code { background-color: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
+                pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+                blockquote { border-left: 4px solid #ccc; margin-left: 0; padding-left: 10px; color: #666; }
+                table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+                img { max-width: 100%; height: auto; }
+            </style>
+        </head>
+        <body>)" + htmlContent + R"(
+        </body>
+        </html>
+    )";
+    
+    m_previewEditor->setHtml(fullHtml);
+}
+
+/**
+ * @brief Экспорт в PDF
+ */
+void MainWindow::exportToPdf()
+{
+    QString defaultName = "document.pdf";
+    if (!m_currentFile.isEmpty()) {
+        QFileInfo fi(m_currentFile);
+        defaultName = fi.baseName() + ".pdf";
+    }
+    
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Export to PDF"), defaultName, tr("PDF Files (*.pdf)"));
+    
+    if (fileName.isEmpty()) return;
+    
+    if (!fileName.endsWith(".pdf")) {
+        fileName += ".pdf";
+    }
+    
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(fileName);
+    printer.setPageSize(QPageSize::A4);
+    printer.setPageMargins(QMarginsF(15, 15, 15, 15), QPageLayout::Millimeter);
+    
+    // Используем HTML из предпросмотра для печати
+    m_previewEditor->document()->print(&printer);
+    
+    QMessageBox::information(this, tr("Success"), tr("File saved successfully:\n%1").arg(fileName));
 }

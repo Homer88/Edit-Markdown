@@ -115,6 +115,14 @@ private:
      * @return QString Текст с обработанными параграфами
      */
     QString parseParagraphs(const QString& text);
+    
+public:
+    /**
+     * @brief Преобразует HTML обратно в Markdown (для синхронизации WYSIWYG -> Markdown)
+     * @param html HTML текст для конвертации
+     * @return QString Текст в формате Markdown
+     */
+    QString htmlToMarkdown(const QString& html);
 };
 
 #endif // MARKDOWNPARSER_H

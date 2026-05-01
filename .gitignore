@@ -2,10 +2,14 @@
 # Build artifacts
 build/
 CMakeFiles/
-*.cmake
-*.dir/
-*.make
-*_autogen/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.exe
+*.out
 
 # Dependencies
 node_modules/
@@ -13,27 +17,31 @@ venv/
 .venv/
 __pycache__/
 *.egg-info/
+.Python
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
+*.swo
 
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Coverage reports
-coverage/
-htmlcov/
-.coverage
-
-# OS files
+# OS generated
 .DS_Store
 Thumbs.db
 ```

@@ -1192,11 +1192,25 @@ void MainWindow::insertHorizontalRule()
  */
 void MainWindow::insertTable()
 {
-    QString table = "\n| Заголовок 1 | Заголовок 2 | Заголовок 3 |\n"
-                    "|-------------|-------------|-------------|\n"
-                    "| Ячейка 1    | Ячейка 2    | Ячейка 3    |\n"
-                    "| Ячейка 4    | Ячейка 5    | Ячейка 6    |\n\n";
-    insertMarkdownAtCursor(table);
+    if (m_isWysiwygMode) {
+        // В режиме WYSIWYG вставляем HTML таблицу напрямую
+        QTextCursor cursor = m_previewEditor->textCursor();
+        QString htmlTable = "<table border=\"1\">"
+                           "<tr><th>Заголовок 1</th><th>Заголовок 2</th><th>Заголовок 3</th></tr>"
+                           "<tr><td>Ячейка 1</td><td>Ячейка 2</td><td>Ячейка 3</td></tr>"
+                           "<tr><td>Ячейка 4</td><td>Ячейка 5</td><td>Ячейка 6</td></tr>"
+                           "</table><p><br/></p>";
+        cursor.insertHtml(htmlTable);
+        m_previewEditor->setTextCursor(cursor);
+        m_previewEditor->setFocus();
+    } else {
+        // В режиме Markdown вставляем Markdown таблицу
+        QString table = "\n| Заголовок 1 | Заголовок 2 | Заголовок 3 |\n"
+                        "|-------------|-------------|-------------|\n"
+                        "| Ячейка 1    | Ячейка 2    | Ячейка 3    |\n"
+                        "| Ячейка 4    | Ячейка 5    | Ячейка 6    |\n\n";
+        insertMarkdownAtCursor(table);
+    }
 }
 
 /**

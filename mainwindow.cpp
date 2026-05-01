@@ -1448,7 +1448,7 @@ void MainWindow::insertTable()
     } else {
         // В режиме Markdown вставляем Markdown таблицу
         QString table = "\n| Заголовок 1 | Заголовок 2 | Заголовок 3 |\n"
-                        "|-------------|-------------|-------------|\n"
+                        "|---|---|---|\n"
                         "| Ячейка 1    | Ячейка 2    | Ячейка 3    |\n"
                         "| Ячейка 4    | Ячейка 5    | Ячейка 6    |\n\n";
         insertMarkdownAtCursor(table);
@@ -1785,7 +1785,27 @@ void MainWindow::insertMarkdownFormatting(const QString& prefix, const QString& 
 void MainWindow::insertMarkdownAtCursor(const QString& text)
 {
     QTextCursor cursor = m_markdownEditor->textCursor();
+    int start = cursor.position();
     cursor.insertText(text);
+    
+    // Перемещаем курсор в начало вставленного текста (после заголовков таблицы)
+    // Для таблиц перемещаем курсор в первую ячейку содержимого
+    if (text.contains("| Заголовок") && text.contains("|---|")) {
+        // Находим позицию после строки разделителя
+        QString insertedText = text;
+        int firstNewline = insertedText.indexOf('\n');
+        int secondNewline = insertedText.indexOf('\n', firstNewline + 1);
+        if (secondNewline != -1) {
+            // Позиция после заголовка и разделителя, в начале первой строки данных
+            cursor.setPosition(start + secondNewline + 1);
+            // Выделяем первую ячейку для удобства редактирования
+            int cellEnd = insertedText.indexOf('|', secondNewline + 1);
+            if (cellEnd != -1 && cellEnd > secondNewline + 1) {
+                cursor.setPosition(start + cellEnd - 1, QTextCursor::KeepAnchor);
+            }
+        }
+    }
+    
     m_markdownEditor->setTextCursor(cursor);
     m_markdownEditor->setFocus();
 }

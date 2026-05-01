@@ -853,6 +853,8 @@ void MainWindow::onTextChanged()
 void MainWindow::toggleWysiwygMode()
 {
     if (m_isWysiwygMode) {
+        // Если уже в режиме WYSIWYG, переключаемся обратно в Markdown
+        toggleMarkdownMode();
         return;
     }
     

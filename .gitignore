@@ -1,33 +1,59 @@
 ```
-# Build artifacts
-build/
-cmake-build-*/
-CMakeFiles/
-CMakeCache.txt
-Makefile
-*.cmake
+# Compiled and build artifacts
 *.o
+*.obj
 *.a
+*.lib
+*.dll
 *.so
 *.dylib
-*.dll
 *.exe
+*.out
 
 # Dependencies
-vendor/
-
-# Logs and temp files
-*.log
-*.tmp
-
-# Environment
-.env
-.env.local
-*.env.*
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
+build/
+dist/
+target/
+.gradle/
 
 # Editors
 .vscode/
 .idea/
 *.swp
 *.swo
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MyPy
+.mypy_cache/
+
+# PyTest
+.pytest_cache/
+
+# Hunspell specific (if applicable)
+hunspell/*.o
+hunspell/*.obj
+hunspell/build/
 ```

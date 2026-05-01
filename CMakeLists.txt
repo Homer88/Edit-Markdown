@@ -8,8 +8,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 # Найти Qt5 или Qt6
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets PrintSupport)
 
 # Исходные файлы проекта
 set(PROJECT_SOURCES
@@ -25,21 +25,26 @@ set(PROJECT_SOURCES
     resources.qrc
 )
 
-# Hunspell библиотека (локальная версия)
-# Используем локальные заголовки и библиотеку из папки hunspell/
-set(HUNSPELL_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/hunspell")
-set(HUNSPELL_LIBRARIES "${CMAKE_SOURCE_DIR}/hunspell/libhunspell.lib")
+# --- Сборка Hunspell из исходников ---
+# Добавляем подпроект Hunspell (исходники лежат в hunspell/hunspell)
+add_subdirectory(hunspell/hunspell)
 
 # Создаем исполняемый файл
 add_executable(markdown-editor ${PROJECT_SOURCES})
 
-# Подключаем заголовочные файлы hunspell
-target_include_directories(markdown-editor PRIVATE ${HUNSPELL_INCLUDE_DIRS})
+# Подключаем заголовочные файлы проекта и Hunspell
+target_include_directories(markdown-editor PRIVATE 
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/hunspell/hunspell
+)
 
 # Линкуем библиотеки
 target_link_libraries(markdown-editor PRIVATE 
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Gui
     Qt${QT_VERSION_MAJOR}::Widgets
-    ${HUNSPELL_LIBRARIES}
+    Qt${QT_VERSION_MAJOR}::PrintSupport
+    hunspell  # Линкуем цель, собранную из исходников
 )
 
 # Установка

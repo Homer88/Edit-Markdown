@@ -2,10 +2,12 @@
 # Compiled and build artifacts
 *.o
 *.obj
-*.exe
+*.a
+*.lib
 *.dll
 *.so
-*.a
+*.dylib
+*.exe
 *.out
 
 # Dependencies
@@ -13,30 +15,45 @@ node_modules/
 venv/
 .venv/
 __pycache__/
-.mypy_cache/
-.pytest_cache/
+*.egg-info/
+build/
+dist/
 target/
 .gradle/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Logs and temp files
 *.log
 *.tmp
-*.swp
+*.temp
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Editors
-.vscode/
-.idea/
+# Coverage
+.coverage
+coverage/
+htmlcov/
 
-# Build systems
-build/
-dist/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
+# OS
+.DS_Store
+Thumbs.db
+
+# MyPy
+.mypy_cache/
+
+# PyTest
+.pytest_cache/
+
+# Hunspell specific (if applicable)
+hunspell/*.o
+hunspell/*.obj
+hunspell/build/
 ```

@@ -238,6 +238,30 @@ markdownparser.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MarkdownEditor.dir/build.make CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.s
 .PHONY : markdownparser.cpp.s
 
+spellchecker.o: spellchecker.cpp.o
+.PHONY : spellchecker.o
+
+# target to build an object file
+spellchecker.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MarkdownEditor.dir/build.make CMakeFiles/MarkdownEditor.dir/spellchecker.cpp.o
+.PHONY : spellchecker.cpp.o
+
+spellchecker.i: spellchecker.cpp.i
+.PHONY : spellchecker.i
+
+# target to preprocess a source file
+spellchecker.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MarkdownEditor.dir/build.make CMakeFiles/MarkdownEditor.dir/spellchecker.cpp.i
+.PHONY : spellchecker.cpp.i
+
+spellchecker.s: spellchecker.cpp.s
+.PHONY : spellchecker.s
+
+# target to generate assembly for a file
+spellchecker.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MarkdownEditor.dir/build.make CMakeFiles/MarkdownEditor.dir/spellchecker.cpp.s
+.PHONY : spellchecker.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -260,6 +284,9 @@ help:
 	@echo "... markdownparser.o"
 	@echo "... markdownparser.i"
 	@echo "... markdownparser.s"
+	@echo "... spellchecker.o"
+	@echo "... spellchecker.i"
+	@echo "... spellchecker.s"
 .PHONY : help
 
 

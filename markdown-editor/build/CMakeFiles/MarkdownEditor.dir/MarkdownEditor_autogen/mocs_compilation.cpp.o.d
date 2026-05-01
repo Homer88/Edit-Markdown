@@ -392,4 +392,12 @@ CMakeFiles/MarkdownEditor.dir/MarkdownEditor_autogen/mocs_compilation.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QTextDocument \
- /usr/include/x86_64-linux-gnu/qt6/QtGui/qtextdocument.h
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qtextdocument.h \
+ /workspace/markdown-editor/build/MarkdownEditor_autogen/EWIEGA46WW/../../../spellchecker.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringlist.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qpoint.h \
+ /usr/include/hunspell/hunspell.hxx /usr/include/hunspell/hunvisapi.h \
+ /usr/include/hunspell/w_char.hxx /usr/include/hunspell/atypes.hxx

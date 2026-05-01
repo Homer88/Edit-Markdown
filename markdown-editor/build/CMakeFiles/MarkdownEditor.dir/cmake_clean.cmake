@@ -10,6 +10,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o.d"
   "CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o"
   "CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o.d"
+  "CMakeFiles/MarkdownEditor.dir/spellchecker.cpp.o"
+  "CMakeFiles/MarkdownEditor.dir/spellchecker.cpp.o.d"
   "MarkdownEditor"
   "MarkdownEditor.pdb"
 )

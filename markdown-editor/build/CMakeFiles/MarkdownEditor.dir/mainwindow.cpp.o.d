@@ -389,6 +389,14 @@ CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QTextDocument \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qtextdocument.h \
+ /workspace/markdown-editor/spellchecker.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringlist.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qpoint.h \
+ /usr/include/hunspell/hunspell.hxx /usr/include/hunspell/hunvisapi.h \
+ /usr/include/hunspell/w_char.hxx /usr/include/hunspell/atypes.hxx \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QVBoxLayout \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qboxlayout.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayout.h \

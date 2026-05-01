@@ -1419,7 +1419,9 @@ CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o: /workspace/markdown-editor/mainw
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qinputdialog.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlineedit.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QFileInfo \
-  /usr/include/x86_64-linux-gnu/qt6/QtCore/qfileinfo.h
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qfileinfo.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QToolButton \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtoolbutton.h
 
 CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o: /workspace/markdown-editor/markdownparser.cpp \
   /usr/include/stdc-predef.h \
@@ -1793,6 +1795,8 @@ CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o: /workspace/markdown-editor/m
 
 /workspace/markdown-editor/markdownparser.cpp:
 
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtoolbutton.h:
+
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QFileInfo:
 
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlineedit.h:
@@ -2100,6 +2104,8 @@ CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o: /workspace/markdown-editor/m
 /usr/include/c++/12/bits/fs_path.h:
 
 /usr/include/locale.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QToolButton:
 
 /usr/include/c++/12/bits/chrono.h:
 

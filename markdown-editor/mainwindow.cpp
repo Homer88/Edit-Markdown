@@ -30,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_markdownAction(nullptr)
     , m_isWysiwygMode(false)
     , m_isModified(false)
+    , m_spellChecker(new SpellChecker("/usr/share/hunspell/ru_RU.aff", "/usr/share/hunspell/ru_RU.dic"))
 {
     setWindowTitle("Markdown Editor");
     resize(1200, 800);
@@ -50,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete m_parser;
+    delete m_spellChecker;
 }
 
 /**
@@ -240,6 +242,14 @@ void MainWindow::createToolBar()
     
     m_toolBar->addSeparator();
     
+    // Кнопка проверки орфографии
+    QAction* spellCheckAction = m_toolBar->addAction("ABC ✓");
+    spellCheckAction->setToolTip("Проверить орфографию (F7)");
+    spellCheckAction->setFont(QFont(spellCheckAction->font().family(), 10, QFont::Bold));
+    connect(spellCheckAction, &QAction::triggered, this, &MainWindow::checkSpelling);
+    
+    m_toolBar->addSeparator();
+    
     // Переключатели режимов
     m_wysiwygAction = m_toolBar->addAction("WYSIWYG");
     m_wysiwygAction->setToolTip("Режим визуального редактирования");
@@ -295,6 +305,12 @@ void MainWindow::createMenuBar()
     QAction* italicAction = editMenu->addAction("Курсив");
     italicAction->setShortcut(QKeySequence::Italic);
     connect(italicAction, &QAction::triggered, this, &MainWindow::insertItalic);
+    
+    editMenu->addSeparator();
+    
+    QAction* spellCheckAction = editMenu->addAction("Проверить орфографию");
+    spellCheckAction->setShortcut(QKeySequence(Qt::Key_F7));
+    connect(spellCheckAction, &QAction::triggered, this, &MainWindow::checkSpelling);
 }
 
 /**
@@ -1008,4 +1024,116 @@ void MainWindow::updateWindowTitle()
         title = "* " + title;
     }
     setWindowTitle(title);
+}
+
+/**
+ * @brief Проверка орфографии в тексте
+ */
+void MainWindow::checkSpelling()
+{
+    if (!m_spellChecker || !m_spellChecker->isInitialized()) {
+        QMessageBox::warning(this, "Проверка орфографии", 
+                            "Словарь не загружен. Проверка орфографии недоступна.");
+        return;
+    }
+    
+    // Получаем текст из редактора
+    QString text;
+    if (m_markdownEditor) {
+        text = m_markdownEditor->toPlainText();
+    } else {
+        return;
+    }
+    
+    // Проверяем текст на ошибки
+    m_spellingErrors = m_spellChecker->checkText(text);
+    
+    if (m_spellingErrors.isEmpty()) {
+        QMessageBox::information(this, "Проверка орфографии", 
+                                "Ошибок не найдено!");
+        return;
+    }
+    
+    // Показываем первую ошибку
+    QPair<int, int> firstError = m_spellingErrors.first();
+    QString wrongWord = text.mid(firstError.first, firstError.second);
+    
+    showSpellingContextMenu(firstError.first, wrongWord);
+}
+
+/**
+ * @brief Показать контекстное меню для исправления ошибки
+ * @param position Позиция ошибки в тексте
+ * @param word Слово с ошибкой
+ */
+void MainWindow::showSpellingContextMenu(int position, const QString& word)
+{
+    if (!m_spellChecker || !m_markdownEditor) {
+        return;
+    }
+    
+    // Создаем контекстное меню
+    QMenu menu(this);
+    menu.setWindowTitle("Исправление: " + word);
+    
+    // Получаем предложения по исправлению
+    QStringList suggestions = m_spellChecker->getSuggestions(word);
+    
+    if (suggestions.isEmpty()) {
+        QAction* noSuggestions = new QAction("Нет предложений", &menu);
+        noSuggestions->setEnabled(false);
+        menu.addAction(noSuggestions);
+    } else {
+        // Добавляем предложения в меню
+        for (const QString& suggestion : suggestions) {
+            QAction* action = new QAction(suggestion, &menu);
+            connect(action, &QAction::triggered, this, [this, position, word, suggestion]() {
+                // Заменяем слово в тексте
+                QTextCursor cursor = m_markdownEditor->textCursor();
+                cursor.setPosition(position);
+                cursor.setPosition(position + word.length(), QTextCursor::KeepAnchor);
+                cursor.insertText(suggestion);
+                m_markdownEditor->setTextCursor(cursor);
+                m_isModified = true;
+                updateWindowTitle();
+                onTextChanged();
+            });
+            menu.addAction(action);
+        }
+    }
+    
+    menu.addSeparator();
+    
+    // Действие "Добавить в словарь"
+    QAction* addToDict = new QAction("Добавить в словарь", &menu);
+    connect(addToDict, &QAction::triggered, this, [this, word]() {
+        m_spellChecker->addWordToDictionary(word);
+        QMessageBox::information(this, "Словарь", 
+                                "Слово \"" + word + "\" добавлено в пользовательский словарь.");
+    });
+    menu.addAction(addToDict);
+    
+    // Действие "Пропустить"
+    QAction* skip = new QAction("Пропустить", &menu);
+    connect(skip, &QAction::triggered, this, [this, position, word]() {
+        // Переходим к следующей ошибке
+        for (int i = 0; i < m_spellingErrors.size(); ++i) {
+            QPair<int, int> error = m_spellingErrors[i];
+            if (error.first == position && error.second == word.length()) {
+                if (i + 1 < m_spellingErrors.size()) {
+                    QPair<int, int> nextError = m_spellingErrors[i + 1];
+                    QString nextWord = m_markdownEditor->toPlainText().mid(nextError.first, nextError.second);
+                    showSpellingContextMenu(nextError.first, nextWord);
+                } else {
+                    QMessageBox::information(this, "Проверка орфографии", 
+                                            "Проверка завершена.");
+                }
+                return;
+            }
+        }
+    });
+    menu.addAction(skip);
+    
+    // Показываем меню
+    menu.exec(QCursor::pos());
 }

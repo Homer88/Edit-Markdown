@@ -12,6 +12,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/workspace/markdown-editor/main.cpp" "CMakeFiles/MarkdownEditor.dir/main.cpp.o" "gcc" "CMakeFiles/MarkdownEditor.dir/main.cpp.o.d"
   "/workspace/markdown-editor/mainwindow.cpp" "CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o" "gcc" "CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o.d"
   "/workspace/markdown-editor/markdownparser.cpp" "CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o" "gcc" "CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o.d"
+  "/workspace/markdown-editor/spellchecker.cpp" "CMakeFiles/MarkdownEditor.dir/spellchecker.cpp.o" "gcc" "CMakeFiles/MarkdownEditor.dir/spellchecker.cpp.o.d"
   )
 
 # Targets to which this target links.

@@ -10,6 +10,7 @@
 #include <QStatusBar>
 #include <QSplitter>
 #include "markdownparser.h"
+#include "spellchecker.h"
 
 /**
  * @class MainWindow
@@ -179,6 +180,18 @@ private slots:
      */
     void insertTask();
     
+    /**
+     * @brief Проверка орфографии в тексте
+     */
+    void checkSpelling();
+    
+    /**
+     * @brief Показать контекстное меню для исправления ошибки
+     * @param position Позиция ошибки в тексте
+     * @param word Слово с ошибкой
+     */
+    void showSpellingContextMenu(int position, const QString& word);
+    
 private:
     /**
      * @brief Инициализация пользовательского интерфейса
@@ -241,6 +254,10 @@ private:
     bool m_isWysiwygMode;              ///< Флаг режима WYSIWYG
     QString m_currentFile;             ///< Путь к текущему файлу
     bool m_isModified;                 ///< Флаг изменений в документе
+    
+    // Проверка орфографии
+    SpellChecker* m_spellChecker;      ///< Экземпляр проверки орфографии
+    QList<QPair<int, int>> m_spellingErrors;  ///< Список ошибок орфографии (позиция, длина)
 };
 
 #endif // MAINWINDOW_H

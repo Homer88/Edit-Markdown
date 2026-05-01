@@ -176,6 +176,10 @@
   /usr/include/errno.h \
   /usr/include/features-time64.h \
   /usr/include/features.h \
+  /usr/include/hunspell/atypes.hxx \
+  /usr/include/hunspell/hunspell.hxx \
+  /usr/include/hunspell/hunvisapi.h \
+  /usr/include/hunspell/w_char.hxx \
   /usr/include/limits.h \
   /usr/include/linux/errno.h \
   /usr/include/linux/limits.h \
@@ -282,10 +286,12 @@
   /usr/include/x86_64-linux-gnu/gnu/stubs.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSize \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSizeF \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qalgorithms.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qanystringview.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qarraydata.h \
@@ -448,4 +454,5 @@
   /usr/lib/gcc/x86_64-linux-gnu/12/include/stdarg.h \
   /usr/lib/gcc/x86_64-linux-gnu/12/include/stdbool.h \
   /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
-  /workspace/markdown-editor/markdownparser.h
+  /workspace/markdown-editor/markdownparser.h \
+  /workspace/markdown-editor/spellchecker.h

@@ -1,51 +1,44 @@
 ```
-# Qt/C++ build artifacts
-build/
-*.pro.user
-*.pro.user.*
-*.qbs.user
-*.qbs.user.*
-.qmake.cache
-.qmake.stash
-moc_*.cpp
-moc_*.h
-qrc_*.cpp
-ui_*.h
+# Build artifacts
 *.o
 *.obj
 *.a
 *.lib
 *.so
-*.dylib
 *.dll
 *.exe
+*.out
 
-# CMake
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
+# CMake build directories
+build/
+cmake-build-*/
+_CPack_Packages/
 *.cmake
+CMakeCache.txt
+CMakeFiles/
+CPackConfig.cmake
+CPackSourceConfig.cmake
 
-# IDE
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Logs
+# Logs and temp files
 *.log
+*.tmp
 
-# Environment
+# Dependencies
+node_modules/
+vendor/
+
+# Coverage reports
+coverage/
+htmlcov/
+
+# Environment files
 .env
 .env.local
 *.env.*
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Temp files
-*.tmp
 ```

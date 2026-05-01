@@ -532,15 +532,15 @@ void MainWindow::initSpellChecker()
     // Сначала проверяем папку приложения (для переносимости между ОС)
     QString appDir = QCoreApplication::applicationDirPath();
     
-    // Проверяем папку application/словари (для Windows и других ОС)
-    if (QFile::exists(appDir + "/словари/ru_RU.aff") && QFile::exists(appDir + "/словари/ru_RU.dic")) {
+    // Проверяем папку application/dictionary (для Windows и других ОС)
+    if (QFile::exists(appDir + "/dictionary/ru_RU.aff") && QFile::exists(appDir + "/dictionary/ru_RU.dic")) {
+        affPath = appDir + "/dictionary/ru_RU.aff";
+        dicPath = appDir + "/dictionary/ru_RU.dic";
+    }
+    // Также проверяем вариант с кириллическим названием папки словари
+    else if (QFile::exists(appDir + "/словари/ru_RU.aff") && QFile::exists(appDir + "/словари/ru_RU.dic")) {
         affPath = appDir + "/словари/ru_RU.aff";
         dicPath = appDir + "/словари/ru_RU.dic";
-    }
-    // Также проверяем вариант с латинским названием папки dictionaries
-    else if (QFile::exists(appDir + "/dictionaries/ru_RU.aff") && QFile::exists(appDir + "/dictionaries/ru_RU.dic")) {
-        affPath = appDir + "/dictionaries/ru_RU.aff";
-        dicPath = appDir + "/dictionaries/ru_RU.dic";
     }
     // Проверяем просто папку приложения (если словари лежат прямо там)
     else if (QFile::exists(appDir + "/ru_RU.aff") && QFile::exists(appDir + "/ru_RU.dic")) {

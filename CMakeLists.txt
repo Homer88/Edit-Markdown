@@ -58,16 +58,21 @@ file(COPY ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.aff
           ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.dic
      DESTINATION ${CMAKE_BINARY_DIR})
 
-# Для Windows: копируем словари в папку application/словари рядом с исполняемым файлом
+# Для Windows: копируем словари в папку application/dictionary рядом с исполняемым файлом
 if(WIN32)
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/словари)
-    file(COPY ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.aff 
-              ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.dic
-         DESTINATION ${CMAKE_BINARY_DIR}/$<CONFIG>/словари)
+    # Создаем папку "dictionary" в той же директории, где будет лежать исполняемый файл
+    add_custom_command(TARGET markdown-editor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:markdown-editor>/dictionary"
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.aff "$<TARGET_FILE_DIR:markdown-editor>/dictionary/"
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.dic "$<TARGET_FILE_DIR:markdown-editor>/dictionary/"
+        COMMENT "Copying dictionary files to application/dictionary folder"
+    )
 else()
     # Для Linux/macOS: создаем папку dictionaries и копируем туда словари
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/dictionaries)
-    file(COPY ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.aff 
-              ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.dic
-         DESTINATION ${CMAKE_BINARY_DIR}/dictionaries)
+    add_custom_command(TARGET markdown-editor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:markdown-editor>/dictionaries"
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.aff "$<TARGET_FILE_DIR:markdown-editor>/dictionaries/"
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.dic "$<TARGET_FILE_DIR:markdown-editor>/dictionaries/"
+        COMMENT "Copying dictionary files to application/dictionaries folder"
+    )
 endif()

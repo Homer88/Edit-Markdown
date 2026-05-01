@@ -52,3 +52,22 @@ install(TARGETS markdown-editor
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
+
+# Копируем файлы словарей Hunspell в папку сборки (для разработки и запуска)
+file(COPY ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.aff 
+          ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.dic
+     DESTINATION ${CMAKE_BINARY_DIR})
+
+# Для Windows: копируем словари в папку application/словари рядом с исполняемым файлом
+if(WIN32)
+    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/словари)
+    file(COPY ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.aff 
+              ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.dic
+         DESTINATION ${CMAKE_BINARY_DIR}/$<CONFIG>/словари)
+else()
+    # Для Linux/macOS: создаем папку dictionaries и копируем туда словари
+    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/dictionaries)
+    file(COPY ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.aff 
+              ${CMAKE_SOURCE_DIR}/hunspell/ru_RU.dic
+         DESTINATION ${CMAKE_BINARY_DIR}/dictionaries)
+endif()

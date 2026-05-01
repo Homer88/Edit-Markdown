@@ -249,6 +249,11 @@ private:
     void loadTranslations(const QString& language);
     
     /**
+     * @brief Инициализация проверки орфографии с определением путей к словарям
+     */
+    void initSpellChecker();
+    
+    /**
      * @brief Вспомогательная функция для вставки Markdown форматирования
      * @param prefix Префикс форматирования
      * @param suffix Суффикс форматирования

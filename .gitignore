@@ -1,36 +1,40 @@
 ```
-# Compiled and build artifacts
+# Qt/C++ build artifacts
+build/
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+.qmake.cache
+.qmake.stash
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
 *.o
 *.obj
 *.a
 *.lib
-*.dll
 *.so
 *.dylib
+*.dll
 *.exe
-*.out
 
-# Dependencies
-node_modules/
-venv/
-.venv/
-__pycache__/
-*.egg-info/
-build/
-dist/
-target/
-.gradle/
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
 
-# Editors
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
-*.temp
 
 # Environment
 .env
@@ -38,22 +42,10 @@ target/
 *.env.*
 
 # Coverage
-.coverage
 coverage/
 htmlcov/
+.coverage
 
-# OS
-.DS_Store
-Thumbs.db
-
-# MyPy
-.mypy_cache/
-
-# PyTest
-.pytest_cache/
-
-# Hunspell specific (if applicable)
-hunspell/*.o
-hunspell/*.obj
-hunspell/build/
+# Temp files
+*.tmp
 ```

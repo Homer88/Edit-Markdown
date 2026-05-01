@@ -18,6 +18,8 @@
 #include <QDir>
 #include <QPrinter>
 #include <QApplication>
+#include <QCoreApplication>
+#include <QStandardPaths>
 
 /**
  * @brief Конструктор главного окна
@@ -35,10 +37,13 @@ MainWindow::MainWindow(QWidget *parent)
     , m_markdownAction(nullptr)
     , m_isWysiwygMode(false)
     , m_isModified(false)
-    , m_spellChecker(new SpellChecker("/usr/share/hunspell/ru_RU.aff", "/usr/share/hunspell/ru_RU.dic"))
+    , m_spellChecker(nullptr)
     , m_translator(new QTranslator(this))
     , m_currentLanguage("system")
 {
+    // Инициализация проверки орфографии с путями к словарям
+    initSpellChecker();
+    
     // Загружаем системный язык при запуске
     loadTranslations("system");
     
@@ -514,6 +519,80 @@ void MainWindow::applyPreviewStyles()
     )";
     
     m_previewEditor->document()->setDefaultStyleSheet(style);
+}
+
+/**
+ * @brief Инициализация проверки орфографии с определением путей к словарям
+ */
+void MainWindow::initSpellChecker()
+{
+    QString affPath;
+    QString dicPath;
+    
+    // Сначала проверяем папку приложения (для переносимости между ОС)
+    QString appDir = QCoreApplication::applicationDirPath();
+    
+    // Проверяем папку application/словари (для Windows и других ОС)
+    if (QFile::exists(appDir + "/словари/ru_RU.aff") && QFile::exists(appDir + "/словари/ru_RU.dic")) {
+        affPath = appDir + "/словари/ru_RU.aff";
+        dicPath = appDir + "/словари/ru_RU.dic";
+    }
+    // Также проверяем вариант с латинским названием папки dictionaries
+    else if (QFile::exists(appDir + "/dictionaries/ru_RU.aff") && QFile::exists(appDir + "/dictionaries/ru_RU.dic")) {
+        affPath = appDir + "/dictionaries/ru_RU.aff";
+        dicPath = appDir + "/dictionaries/ru_RU.dic";
+    }
+    // Проверяем просто папку приложения (если словари лежат прямо там)
+    else if (QFile::exists(appDir + "/ru_RU.aff") && QFile::exists(appDir + "/ru_RU.dic")) {
+        affPath = appDir + "/ru_RU.aff";
+        dicPath = appDir + "/ru_RU.dic";
+    }
+    // Проверяем папку проекта (для разработки)
+    else if (QFile::exists("hunspell/ru_RU.aff") && QFile::exists("hunspell/ru_RU.dic")) {
+        affPath = "hunspell/ru_RU.aff";
+        dicPath = "hunspell/ru_RU.dic";
+    }
+    // Для Windows: проверяем стандартные пути установки
+#ifdef Q_OS_WIN
+    else {
+        QStringList winPaths;
+        winPaths << appDir + "/hunspell/ru_RU.aff"
+                 << appDir + "/../hunspell/ru_RU.aff"
+                 << QStandardPaths::locate(QStandardPaths::AppDataLocation, "hunspell/ru_RU.aff");
+        
+        for (const QString& path : winPaths) {
+            if (!path.isEmpty() && QFile::exists(path) && 
+                QFile::exists(path.replace(".aff", ".dic"))) {
+                affPath = path;
+                dicPath = path.replace(".aff", ".dic");
+                break;
+            }
+        }
+    }
+#endif
+    
+    // Пробуем системные пути Linux
+    if (affPath.isEmpty() && QFile::exists("/usr/share/hunspell/ru_RU.aff") && QFile::exists("/usr/share/hunspell/ru_RU.dic")) {
+        affPath = "/usr/share/hunspell/ru_RU.aff";
+        dicPath = "/usr/share/hunspell/ru_RU.dic";
+    }
+    // Пробуем альтернативные системные пути Linux
+    if (affPath.isEmpty() && QFile::exists("/usr/share/hunspell/ru_RU-affix.dat") && QFile::exists("/usr/share/hunspell/ru_RU-dict.dat")) {
+        affPath = "/usr/share/hunspell/ru_RU-affix.dat";
+        dicPath = "/usr/share/hunspell/ru_RU-dict.dat";
+    }
+    
+    if (!affPath.isEmpty() && !dicPath.isEmpty()) {
+        m_spellChecker = new SpellChecker(affPath, dicPath);
+        if (!m_spellChecker->isInitialized()) {
+            qWarning() << "Не удалось инициализировать проверку орфографии";
+            delete m_spellChecker;
+            m_spellChecker = nullptr;
+        }
+    } else {
+        qWarning() << "Файлы словаря не найдены. Проверка орфографии будет недоступна.";
+        m_spellChecker = nullptr;
+    }
 }
 
 /**

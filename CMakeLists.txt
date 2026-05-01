@@ -66,6 +66,11 @@ target_include_directories(markdown-editor PRIVATE
     ${CMAKE_SOURCE_DIR}/hunspell/hunspell
 )
 
+# Определяем HUNSPELL_STATIC для использования статической библиотеки Hunspell
+if(WIN32)
+    target_compile_definitions(markdown-editor PRIVATE HUNSPELL_STATIC)
+endif()
+
 # Линкуем библиотеки
 target_link_libraries(markdown-editor PRIVATE 
     Qt${QT_VERSION_MAJOR}::Core

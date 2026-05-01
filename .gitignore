@@ -1,54 +1,37 @@
 ```
-# CMake build artifacts
+# Build artifacts
+build/
+cmake-build-*/
 CMakeFiles/
 CMakeCache.txt
-cmake_install.cmake
 Makefile
 *.cmake
 *.o
 *.a
 *.so
 *.dylib
-*.exe
 *.dll
+*.exe
 
-# Dependencies and packages
+# Dependencies
+.externalNativeBuild/
+.gradle/
 node_modules/
-venv/
-.venv/
-__pycache__/
-*.egg-info/
-.Python
-pip-log.txt
-pip-delete-this-directory.txt
+vendor/
 
-# Logs and temporary files
-*.log
-*.tmp
-*.temp
+# IDE files
+.idea/
+.vscode/
 *.swp
 *.swo
-*~
 
-# Environment variables
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+
+# Environment
 .env
 .env.local
 .env.*
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
-
-# IDE specific
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-nbproject/
 ```

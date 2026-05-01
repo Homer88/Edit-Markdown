@@ -1404,7 +1404,17 @@ CMakeFiles/MarkdownEditor.dir/mainwindow.cpp.o: /workspace/markdown-editor/mainw
   /usr/include/x86_64-linux-gnu/qt6/QtGui/QFontDatabase \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qfontdatabase.h \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/QCloseEvent \
-  /usr/include/x86_64-linux-gnu/qt6/QtGui/qevent.h
+  /usr/include/x86_64-linux-gnu/qt6/QtGui/qevent.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialog \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdialog.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QLabel \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlabel.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtGui/qpicture.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qpushbutton.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGridLayout \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgridlayout.h
 
 CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o: /workspace/markdown-editor/markdownparser.cpp \
   /usr/include/stdc-predef.h \
@@ -1778,6 +1788,8 @@ CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o: /workspace/markdown-editor/m
 
 /workspace/markdown-editor/markdownparser.cpp:
 
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qpushbutton.h:
+
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmessagebox.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdialog.h:
@@ -2036,6 +2048,8 @@ CMakeFiles/MarkdownEditor.dir/markdownparser.cpp.o: /workspace/markdown-editor/m
 
 /usr/include/errno.h:
 
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGridLayout:
+
 /usr/include/x86_64-linux-gnu/qt6/QtGui/qregion.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h:
@@ -2111,6 +2125,8 @@ MarkdownEditor_autogen/EWIEGA46WW/moc_mainwindow.cpp:
 /usr/include/c++/12/system_error:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qarraydataops.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QLabel:
 
 /usr/include/x86_64-linux-gnu/bits/types/timer_t.h:
 
@@ -2270,6 +2286,8 @@ MarkdownEditor_autogen/mocs_compilation.cpp:
 
 /usr/include/c++/12/version:
 
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialog:
+
 /usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h:
 
 /usr/include/c++/12/bits/shared_ptr_base.h:
@@ -2335,6 +2353,8 @@ MarkdownEditor_autogen/mocs_compilation.cpp:
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringlist.h:
 
 /usr/include/x86_64-linux-gnu/bits/stdint-intn.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtGui/qpicture.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtGui/qpixmap.h:
 
@@ -2580,6 +2600,8 @@ MarkdownEditor_autogen/mocs_compilation.cpp:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qsysinfo.h:
 
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h:
+
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qmap.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qlogging.h:
@@ -2704,6 +2726,8 @@ MarkdownEditor_autogen/mocs_compilation.cpp:
 
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsexports.h:
 
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlabel.h:
+
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qwidget.h:
 
 /usr/include/x86_64-linux-gnu/bits/uio_lim.h:
@@ -2725,6 +2749,8 @@ MarkdownEditor_autogen/mocs_compilation.cpp:
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearrayview.h:
 
 /usr/include/c++/12/bits/unordered_map.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton:
 
 /usr/include/x86_64-linux-gnu/gnu/stubs.h:
 

@@ -10,6 +10,8 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QGridLayout>
+#include <QInputDialog>
+#include <QFileInfo>
 
 /**
  * @brief Конструктор главного окна
@@ -611,10 +613,54 @@ void MainWindow::insertLink()
 
 /**
  * @brief Вставка изображения
+ * Открывает диалог выбора файла изображения и вставляет Markdown-разметку
  */
 void MainWindow::insertImage()
 {
-    insertMarkdownFormatting("![alt]", "(url)");
+    // Открываем диалог выбора файла изображения
+    QString fileName = QFileDialog::getOpenFileName(
+        this,
+        "Выберите изображение",
+        "",
+        "Изображения (*.png *.jpg *.jpeg *.gif *.bmp *.svg *.webp);;Все файлы (*)"
+    );
+    
+    if (fileName.isEmpty()) {
+        return;
+    }
+    
+    // Получаем только имя файла для относительного пути
+    QFileInfo fileInfo(fileName);
+    QString imageFileName = fileInfo.fileName();
+    
+    // Спрашиваем пользователя, использовать ли полный путь или только имя файла
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        "Путь к изображению",
+        "Использовать полный путь к файлу?\n\nДа - полный путь\nНет - только имя файла (для относительных ссылок)",
+        QMessageBox::Yes | QMessageBox::No
+    );
+    
+    QString imagePath = (reply == QMessageBox::Yes) ? fileName : imageFileName;
+    
+    // Запрашиваем описание изображения (alt текст)
+    bool ok;
+    QString altText = QInputDialog::getText(
+        this,
+        "Описание изображения",
+        "Введите альтернативный текст (описание):",
+        QLineEdit::Normal,
+        "Описание изображения",
+        &ok
+    );
+    
+    if (!ok) {
+        altText = "Описание";
+    }
+    
+    // Формируем Markdown-разметку для изображения
+    QString markdown = QString("![%1](%2)").arg(altText).arg(imagePath);
+    insertMarkdownAtCursor(markdown);
 }
 
 /**

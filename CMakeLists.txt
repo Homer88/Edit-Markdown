@@ -98,3 +98,25 @@ if(TRANSLATION_FILES)
         )
     endif()
 endif()
+# --- Автоматическое копирование библиотек Qt (Windows) ---
+if(WIN32)
+    # Находим утилиту windeployqt
+    get_target_property(_qmake_executable Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
+    if(_qmake_executable)
+        get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
+        find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
+    endif()
+
+    if(WINDEPLOYQT_EXECUTABLE)
+        add_custom_command(TARGET markdown-editor POST_BUILD
+            COMMAND ${WINDEPLOYQT_EXECUTABLE}
+                    --qmldir "${CMAKE_SOURCE_DIR}"
+                    --no-compiler-runtime
+                    --no-opengl-sw
+                    "$<TARGET_FILE_DIR:markdown-editor>/$<TARGET_FILE_NAME:markdown-editor>"
+            COMMENT "Running windeployqt to copy Qt dependencies..."
+        )
+    else()
+        message(WARNING "windeployqt not found! Qt libraries will not be copied automatically. Please ensure Qt is installed correctly.")
+    endif()
+endif()

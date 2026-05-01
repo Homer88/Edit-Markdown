@@ -1,50 +1,51 @@
 ```
-# Compiled files
-*.o
-*.obj
+# Build artifacts
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+*.cmake
+Makefile
+conanbuildinfo.txt
+*.a
+*.so
+*.dylib
 *.exe
 *.dll
-*.so
-*.a
-*.out
-
-# Qt/MOC generated files
-moc_*.cpp
-moc_*.h
-
-# Build directories
-build/
-dist/
-target/
 
 # Dependencies
+.externalNativeBuild/
+.gradle/
 node_modules/
-venv/
-.venv/
-__pycache__/
-*.egg-info/
+vendor/
 
-# IDE files
-.vscode/
+# IDE specific
 .idea/
+.vscode/
 *.swp
 *.swo
-*.tmp
 
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+*.bak
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Coverage
+# Coverage reports
 coverage/
 htmlcov/
 .coverage
 
-# OS files
-.DS_Store
-Thumbs.db
+# Python specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.PyInstaller/
 ```

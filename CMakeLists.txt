@@ -22,6 +22,8 @@ set(PROJECT_SOURCES
     markdownparser.h
     spellchecker.cpp
     spellchecker.h
+    settings_dialog.cpp
+    settings_dialog.h
     resources.qrc
 )
 

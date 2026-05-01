@@ -33,8 +33,11 @@ set(HUNSPELL_LIBRARIES "${CMAKE_SOURCE_DIR}/hunspell/libhunspell.lib")
 # Создаем исполняемый файл
 add_executable(markdown-editor ${PROJECT_SOURCES})
 
-# Подключаем заголовочные файлы hunspell
-target_include_directories(markdown-editor PRIVATE ${HUNSPELL_INCLUDE_DIRS})
+# Подключаем заголовочные файлы проекта и hunspell
+target_include_directories(markdown-editor PRIVATE 
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/hunspell
+)
 
 # Линкуем библиотеки
 target_link_libraries(markdown-editor PRIVATE 

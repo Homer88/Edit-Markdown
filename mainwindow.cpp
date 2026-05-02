@@ -1026,7 +1026,36 @@ void MainWindow::toggleWysiwygMode()
     // Синхронизируем содержимое: конвертируем Markdown в HTML для WYSIWYG редактора
     QString markdownText = m_markdownEditor->toPlainText();
     QString htmlText = m_parser->parse(markdownText);
-    m_previewEditor->setHtml(htmlText);
+    
+    // Формируем полный HTML с базовыми стилями для WYSIWYG редактора
+    QString fullHtml = R"(
+        <html>
+        <head>
+            <style>
+                body { font-family: sans-serif; padding: 20px; line-height: 1.6; )";
+    
+    if (m_isDarkMode) {
+        fullHtml += "background-color: #2b2b2b; color: #e0e0e0;";
+    } else {
+        fullHtml += "background-color: #ffffff; color: #333333;";
+    }
+    
+    fullHtml += R"( }
+                code { background-color: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
+                pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+                blockquote { border-left: 4px solid #ccc; margin-left: 0; padding-left: 10px; color: #666; }
+                table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+                img { max-width: 100%; height: auto; }
+            </style>
+        </head>
+        <body>)" + htmlText + R"(
+        </body>
+        </html>
+    )";
+    
+    m_previewEditor->setHtml(fullHtml);
     
     // Скрываем редактор Markdown, показываем предпросмотр как редактор
     m_markdownEditor->hide();
@@ -1057,6 +1086,15 @@ void MainWindow::toggleMarkdownMode()
     m_isWysiwygMode = false;
     m_wysiwygAction->setChecked(false);
     m_markdownAction->setChecked(true);
+    
+    // Конвертируем HTML обратно в Markdown при переключении из WYSIWYG в Markdown
+    QString htmlText = m_previewEditor->toHtml();
+    QString markdownText = m_parser->htmlToMarkdown(htmlText);
+    
+    // Обновляем содержимое Markdown редактора
+    m_markdownEditor->blockSignals(true);
+    m_markdownEditor->setPlainText(markdownText);
+    m_markdownEditor->blockSignals(false);
     
     // Показываем редактор Markdown, скрываем редактирование предпросмотра
     m_previewEditor->setReadOnly(true);

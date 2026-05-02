@@ -1,37 +1,29 @@
 ```
-# Build artifacts
+# CMake build artifacts
 build/
-cmake-build-*/
-CMakeFiles/
 CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
 Makefile
-*.cmake
-*.o
-*.a
-*.so
-*.dylib
-*.dll
-*.exe
+CTestCostData.txt
+LastTest.log
 
-# Dependencies
-.externalNativeBuild/
-.gradle/
-node_modules/
-vendor/
+# Qt/MOC generated files
+moc_*.cpp
+moc_*.cpp_parameters
+*.moc
+qrc_*.cpp
+*_autogen/
 
-# IDE files
-.idea/
-.vscode/
-*.swp
-*.swo
+# Hunspell library build
+libhunspell.a
 
-# Logs and temp files
+# Temporary and log files
 *.log
 *.tmp
-*.bak
+*.swp
 
-# Environment
-.env
-.env.local
-.env.*
+# Progress and dependency tracking
+progress.marks
+*.d
 ```

@@ -1,4 +1,4 @@
-QT += core testlib
+QT += core gui testlib
 CONFIG += console c++17
 TARGET = parser_tests
 

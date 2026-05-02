@@ -60,15 +60,20 @@ Back
   
 `code`  
 
-## 8. Code
-`inline`
-// indented block  
+## 8.`inline`inline`
+```
+// indented block
 int main() {  
 return 0;  
 }
+```
+```
 plain indented block without highlighting
-def hello():  
-print("Python")
+```
+```
+def hello():
+print(&quot;Python&quot;)
+```
 ## ## 9. Horizontal rules
 
 ---
@@ -98,11 +103,11 @@ H<sub>2</sub>O
 X<sup>2</sup>  
 (Some: ^superscript^ and ~subscript~)
 ## 15. Math (LaTeX)
-Inline: $E=mc^2$  
+Inline: <span class="math-inline">$E=mc^2$</span>  
 Block:  
-$$  
+<span class="math-display">$<span class="math-inline">$  
 \int_a^b x^2 dx = \frac{b^3-a^3}{3}  
-$$
+$</span>$</span>
 ## 16. HTML inside
 Red text  
 <span style="background:yellow;">Highlight</span>  
@@ -130,9 +135,10 @@ https://example.com becomes link
   
 - [x] task  
 
-  
-rust  
+```
+rust
 fn main() {}
+```
 ## 23. Nested list with code and quote
 
 - Step 1
@@ -140,7 +146,9 @@ fn main() {}
 - Sub A
 - Sub B
 
-echo "inside"
+```
+echo &quot;inside&quot;
+```
 
 - Step 2
 

@@ -225,12 +225,13 @@ QString MarkdownParser::parseBlockquotes(const QString& text)
             if (!inBlockquote) {
                 processed += "<blockquote>";
                 inBlockquote = true;
-            }
-            // Добавляем перенос строки внутри цитаты для многострочных цитат
-            if (processed.endsWith("</blockquote>") == false && !processed.endsWith("<blockquote>")) {
+            } else {
+                // Добавляем перенос строки между строками цитаты
                 processed += "<br>";
             }
-            processed += match.captured(1) + "\n";
+            QString quoteContent = match.captured(1);
+            // Рекурсивно парсим содержимое цитаты для поддержки заголовков, кода и т.д.
+            processed += parseHeaders(quoteContent) + "\n";
         } else {
             if (inBlockquote) {
                 processed += "</blockquote>";

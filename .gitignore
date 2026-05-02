@@ -1,12 +1,1 @@
-```
-# Compiled and build artifacts
-*.o
-*.pro
-# Test artifacts
-test/*.o
-test/*.pro
-# Temporary and output files
-test/output_*.html
-test/output_*.md
-*.tmp
-```
+Nothing needs to be added to .gitignore since only a test file (`test/checksums.txt`) was modified and no build artifacts, dependencies, or temporary files were detected in the changes.

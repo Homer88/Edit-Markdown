@@ -1041,12 +1041,43 @@ void MainWindow::toggleWysiwygMode()
     }
     
     fullHtml += R"( }
-                code { background-color: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
-                pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
-                blockquote { border-left: 4px solid #ccc; margin-left: 0; padding-left: 10px; color: #666; }
+                code { padding: 2px 5px; border-radius: 3px; )";
+    if (m_isDarkMode) {
+        fullHtml += "background-color: #3c3c3c; color: #d4d4d4;";
+    } else {
+        fullHtml += "background-color: #f4f4f4; color: #333;";
+    }
+    fullHtml += R"( }
+                pre { padding: 10px; border-radius: 5px; overflow-x: auto; )";
+    if (m_isDarkMode) {
+        fullHtml += "background-color: #1e1e1e; border: 1px solid #555;";
+    } else {
+        fullHtml += "background-color: #f4f4f4; border: 1px solid #ddd;";
+    }
+    fullHtml += R"( }
+                pre code { background-color: transparent; color: inherit; }
+                blockquote { border-left: 4px solid )";
+    if (m_isDarkMode) {
+        fullHtml += "#555; color: #aaa; background-color: #333;";
+    } else {
+        fullHtml += "#ccc; color: #666; background-color: #f9f9f9;";
+    }
+    fullHtml += R"( margin-left: 0; padding-left: 10px; }
                 table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
-                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                th { background-color: #f2f2f2; }
+                th, td { border: 1px solid )";
+    if (m_isDarkMode) {
+        fullHtml += "#555;";
+    } else {
+        fullHtml += "#ddd;";
+    }
+    fullHtml += R"( padding: 8px; text-align: left; }
+                th { background-color: )";
+    if (m_isDarkMode) {
+        fullHtml += "#333;";
+    } else {
+        fullHtml += "#f2f2f2;";
+    }
+    fullHtml += R"( }
                 img { max-width: 100%; height: auto; }
             </style>
         </head>
@@ -1096,16 +1127,21 @@ void MainWindow::toggleMarkdownMode()
     m_markdownEditor->setPlainText(markdownText);
     m_markdownEditor->blockSignals(false);
     
-    // Показываем редактор Markdown, скрываем редактирование предпросмотра
+    // Показываем редактор Markdown, восстанавливаем предпросмотр
     m_previewEditor->setReadOnly(true);
-    m_previewEditor->hide();
+    m_previewEditor->show();
     m_markdownEditor->show();
     m_markdownEditor->setFocus();
     
     // Восстанавливаем размеры сплиттера (50/50)
     QSplitter* splitter = qobject_cast<QSplitter*>(m_markdownEditor->parentWidget());
     if (splitter) {
-        splitter->setSizes(QList<int>() << splitter->width() / 2 << splitter->width() / 2);
+        int totalWidth = splitter->width();
+        if (m_isPreviewVisible) {
+            splitter->setSizes(QList<int>() << totalWidth / 2 << totalWidth / 2);
+        } else {
+            splitter->setSizes(QList<int>() << totalWidth << 0);
+        }
     }
     
     m_currentEditor = m_markdownEditor;
@@ -3174,12 +3210,43 @@ void MainWindow::updatePreview()
     }
     
     fullHtml += R"( }
-                code { background-color: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
-                pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
-                blockquote { border-left: 4px solid #ccc; margin-left: 0; padding-left: 10px; color: #666; }
+                code { padding: 2px 5px; border-radius: 3px; )";
+    if (m_isDarkMode) {
+        fullHtml += "background-color: #3c3c3c; color: #d4d4d4;";
+    } else {
+        fullHtml += "background-color: #f4f4f4; color: #333;";
+    }
+    fullHtml += R"( }
+                pre { padding: 10px; border-radius: 5px; overflow-x: auto; )";
+    if (m_isDarkMode) {
+        fullHtml += "background-color: #1e1e1e; border: 1px solid #555;";
+    } else {
+        fullHtml += "background-color: #f4f4f4; border: 1px solid #ddd;";
+    }
+    fullHtml += R"( }
+                pre code { background-color: transparent; color: inherit; }
+                blockquote { border-left: 4px solid )";
+    if (m_isDarkMode) {
+        fullHtml += "#555; color: #aaa; background-color: #333;";
+    } else {
+        fullHtml += "#3498db; color: #666; background-color: #f9f9f9;";
+    }
+    fullHtml += R"( margin: 10px 0; padding: 10px 20px; }
                 table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
-                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                th { background-color: #f2f2f2; }
+                th, td { border: 1px solid )";
+    if (m_isDarkMode) {
+        fullHtml += "#555;";
+    } else {
+        fullHtml += "#ddd;";
+    }
+    fullHtml += R"( padding: 8px; text-align: left; }
+                th { background-color: )";
+    if (m_isDarkMode) {
+        fullHtml += "#333;";
+    } else {
+        fullHtml += "#f2f2f2;";
+    }
+    fullHtml += R"( }
                 img { max-width: 100%; height: auto; }
             </style>
         </head>

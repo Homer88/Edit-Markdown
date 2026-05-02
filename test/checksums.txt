@@ -1,13 +1,13 @@
 Round-trip test results
-Generated: Sat May 2 06:07:12 2026
+Generated: Sat May 2 06:45:47 2026
 
 Original file: test.md
 Original size: 2740 bytes
 Original MD5: e9ccf4e3469f88ee7189aa7711e7919f
 
 Result file: output_roundtrip.md
-Result size: 2491 bytes
-Result MD5: 24bfdeb6ba689c870d5afceecdc3a9f5
+Result size: 2480 bytes
+Result MD5: 7352834188cf9e9f67c16bfc0d10cf7f
 
 STATUS: MISMATCH - Some formatting may have changed
 Note: This is expected for round-trip conversion as HTML tags are stripped

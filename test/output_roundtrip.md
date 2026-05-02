@@ -6,14 +6,10 @@
 #### H4
 ##### H5
 ###### H6
-Alt H1**===  
-Alt H2
-
----
-
+# Alt H1
+## Alt H2
 ## 2. Paragraphs & line breaks
-Line 1 (two spaces at end)  
-Line 2  
+Line 1 (two spaces at end)**Line 2  
 Empty line -> new paragraph.
 ## 3. Text styles
 *Italic* *Italic*  
@@ -73,9 +69,7 @@ return 0;
 plain indented block without highlighting
 def hello():  
 print("Python")
-## 9. Horizontal rules
-
----
+## ## 9. Horizontal rules
 
 ---
 

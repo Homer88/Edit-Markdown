@@ -22,9 +22,9 @@ QString MarkdownParser::parse(const QString& markdown)
     html = parseHeaders(html);
     // Затем горизонтальные линии (после заголовков, чтобы --- в заголовках не стали <hr>)
     html = parseHorizontalRules(html);
+    html = parseCode(html);  // Код обрабатываем до цитат и таблиц
     html = parseBlockquotes(html);
-    html = parseCode(html);
-    html = parseTables(html);  // Добавляем парсинг таблиц перед списками
+    html = parseTables(html);  // Таблицы после кода
     html = parseLists(html);
     html = parseImages(html);
     html = parseLinks(html);
@@ -232,7 +232,7 @@ QString MarkdownParser::parseBlockquotes(const QString& text)
     
     for (int i = 0; i < lines.size(); ++i) {
         QString line = lines[i];
-        QRegularExpression blockquoteLine("^>\\s*(.*)$");
+        QRegularExpression blockquoteLine("^>(.*)$");
         QRegularExpressionMatch match = blockquoteLine.match(line);
         
         if (match.hasMatch()) {
@@ -243,8 +243,9 @@ QString MarkdownParser::parseBlockquotes(const QString& text)
                 // Добавляем перенос строки между строками цитаты
                 processed += "<br>";
             }
-            QString quoteContent = match.captured(1);
+            QString quoteContent = match.captured(1).trimmed();
             // Рекурсивно парсим содержимое цитаты для поддержки заголовков, кода и т.д.
+            // Но не вызываем parseBlockquotes снова, чтобы избежать бесконечной рекурсии
             processed += parseHeaders(quoteContent) + "\n";
         } else {
             if (inBlockquote) {

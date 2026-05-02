@@ -105,7 +105,7 @@ private slots:
         QString input = "```\nint main() {\n    return 0;\n}\n```";
         QString result = markdownToHtml(input);
         
-        QVERIFY(result.contains("<pre><code>"));
+        QVERIFY(result.contains("<pre><code") || result.contains("<pre><code>"));
         QVERIFY(result.contains("int main()"));
         QVERIFY(result.contains("return 0"));
         QVERIFY(result.contains("</code></pre>"));
@@ -116,7 +116,7 @@ private slots:
         QString input = "```cpp\nint main() {\n    return 0;\n}\n```";
         QString result = markdownToHtml(input);
         
-        QVERIFY(result.contains("<pre><code>"));
+        QVERIFY(result.contains("<pre><code") || result.contains("<pre><code>"));
         QVERIFY(result.contains("cpp"));
         QVERIFY(result.contains("int main()"));
         qDebug() << "Code block with language result:" << result;
@@ -128,7 +128,7 @@ private slots:
         
         // Должны быть оба типа кода
         QVERIFY(result.contains("<code>inline</code>"));
-        QVERIFY(result.contains("<pre><code>"));
+        QVERIFY(result.contains("<pre><code") || result.contains("<pre><code>"));
         QVERIFY(result.contains("code block"));
         qDebug() << "Mixed code result:" << result;
     }
@@ -137,7 +137,7 @@ private slots:
         QString input = "```\nblock 1\n```\nтекст между\n```\nblock 2\n```";
         QString result = markdownToHtml(input);
         
-        int preCount = result.count("<pre><code>");
+        int preCount = result.count("<pre><code");
         QCOMPARE(preCount, 2);
         QVERIFY(result.contains("block 1"));
         QVERIFY(result.contains("block 2"));

@@ -193,11 +193,11 @@ QString MarkdownParser::parseCode(const QString& text)
 {
     QString result = text;
     
-    // Блоки кода с ```
+    // Блоки кода с ``` (должны обрабатываться первыми, до инлайн кода)
     QRegularExpression codeBlock("```([\\s\\S]*?)```");
     result.replace(codeBlock, "<pre><code>\\1</code></pre>");
     
-    // Инлайн код с `
+    // Инлайн код с ` (обработка после блоков кода)
     QRegularExpression inlineCode("`([^`]+)`");
     result.replace(inlineCode, "<code>\\1</code>");
     
@@ -225,6 +225,10 @@ QString MarkdownParser::parseBlockquotes(const QString& text)
             if (!inBlockquote) {
                 processed += "<blockquote>";
                 inBlockquote = true;
+            }
+            // Добавляем перенос строки внутри цитаты для многострочных цитат
+            if (processed.endsWith("</blockquote>") == false && !processed.endsWith("<blockquote>")) {
+                processed += "<br>";
             }
             processed += match.captured(1) + "\n";
         } else {

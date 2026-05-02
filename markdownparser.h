@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QTextDocument>
+#include <QMap>
 
 /**
  * @class MarkdownParser
@@ -122,6 +123,38 @@ private:
      * @return QString Текст с обработанными таблицами
      */
     QString parseTables(const QString& text);
+    
+    /**
+     * @brief Экранирует специальные символы
+     * @param text Текст для обработки
+     * @return QString Текст с экранированными символами
+     */
+    QString parseEscapes(const QString& text);
+    
+    /**
+     * @brief Сохраняет блоки кода в специальные плейсхолдеры
+     * @param text Текст для обработки
+     * @return QString Текст с замененными блоками кода
+     */
+    QString preserveCodeBlocks(const QString& text);
+    
+    /**
+     * @brief Восстанавливает блоки кода и обрабатывает инлайн код
+     * @param text Текст для обработки
+     * @return QString Текст с восстановленным кодом
+     */
+    QString restoreAndParseCode(const QString& text);
+    
+    /**
+     * @brief Парсит математику LaTeX
+     * @param text Текст для обработки
+     * @return QString Текст с обработанной математикой
+     */
+    QString parseMath(const QString& text);
+    
+    // Хранилища для плейсхолдеров кода
+    QMap<QString, QString> codeBlocks_;
+    QMap<QString, QString> inlineCodes_;
     
 public:
     /**

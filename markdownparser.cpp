@@ -363,13 +363,113 @@ QString MarkdownParser::htmlToMarkdown(const QString& html)
 {
     QString result = html;
     
-    // Извлекаем только текст из body, игнорируя HTML теги
-    QTextDocument doc;
-    doc.setHtml(result);
-    result = doc.toPlainText();
+    // 1. Сохраняем блоки кода <pre><code>...</code></pre> как ```...```
+    QRegularExpression preCode("<pre><code>([\\s\\S]*?)</code></pre>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(preCode, "```\n\\1\n```");
     
-    // Базовая обработка: разделяем абзацы двойным переносом строки
-    result.replace(QRegExp("\\n\\s*\\n"), "\\n\\n");
+    // 2. Сохраняем инлайн код <code>...</code> как `...`
+    QRegularExpression inlineCode("<code>([^<]+)</code>");
+    result.replace(inlineCode, "`\\1`");
     
+    // 3. Заголовки <h1>-<h6> → #, ##, ### и т.д.
+    QRegularExpression h1("<h1[^>]*>(.+?)</h1>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(h1, "# \\1");
+    
+    QRegularExpression h2("<h2[^>]*>(.+?)</h2>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(h2, "## \\1");
+    
+    QRegularExpression h3("<h3[^>]*>(.+?)</h3>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(h3, "### \\1");
+    
+    QRegularExpression h4("<h4[^>]*>(.+?)</h4>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(h4, "#### \\1");
+    
+    QRegularExpression h5("<h5[^>]*>(.+?)</h5>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(h5, "##### \\1");
+    
+    QRegularExpression h6("<h6[^>]*>(.+?)</h6>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(h6, "###### \\1");
+    
+    // 4. Жирный текст <b>, <strong> → **...**
+    QRegularExpression bold("<(?:b|strong)[^>]*>(.+?)</(?:b|strong)>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(bold, "**\\1**");
+    
+    // 5. Курсив <i>, <em> → *...*
+    QRegularExpression italic("<(?:i|em)[^>]*>(.+?)</(?:i|em)>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(italic, "*\\1*");
+    
+    // 6. Зачеркнутый <s>, <strike>, <del> → ~~...~~
+    QRegularExpression strike("<(?:s|strike|del)[^>]*>(.+?)</(?:s|strike|del)>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(strike, "~~\\1~~");
+    
+    // 7. Ссылки <a href="url">text</a> → [text](url)
+    QRegularExpression link("<a[^>]*href=\"([^\"]+)\"[^>]*>(.+?)</a>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(link, "[\\2](\\1)");
+    
+    // 8. Изображения <img src="url" alt="alt"> → ![alt](url)
+    QRegularExpression image("<img[^>]*src=\"([^\"]+)\"[^>]*alt=\"([^\"]*)\"[^>]*>");
+    result.replace(image, "![\\2](\\1)");
+    // Альтернативный порядок атрибутов
+    QRegularExpression image2("<img[^>]*alt=\"([^\"]*)\"[^>]*src=\"([^\"]+)\"[^>]*>");
+    result.replace(image2, "![\\1](\\2)");
+    
+    // 9. Цитаты <blockquote>...</blockquote> → обрабатываем построчно
+    // Сначала заменяем opening/closing теги на маркеры
+    result.replace(QRegularExpression("<blockquote[^>]*>"), "\n<BLOCKQUOTE_START>\n");
+    result.replace(QRegularExpression("</blockquote>"), "\n<BLOCKQUOTE_END>\n");
+    
+    // 10. Списки - сначала маркированные
+    result.replace(QRegularExpression("<ul[^>]*>"), "\n<UL_START>\n");
+    result.replace(QRegularExpression("</ul>"), "\n<UL_END>\n");
+    
+    // 11. Нумерованные списки
+    result.replace(QRegularExpression("<ol[^>]*>"), "\n<OL_START>\n");
+    result.replace(QRegularExpression("</ol>"), "\n<OL_END>\n");
+    
+    // 12. Элементы списка <li> → - ...
+    QRegularExpression listItem("<li[^>]*>(.+?)</li>", QRegularExpression::DotMatchesEverythingOption);
+    result.replace(listItem, "- \\1\n");
+    
+    // 13. Удаляем оставшиеся HTML теги (span, div и т.д.)
+    QRegularExpression remainingTags("<[^>]+>");
+    result.replace(remainingTags, "");
+    
+    // 14. Теперь обрабатываем цитаты построчно
+    QStringList lines = result.split('\n');
+    QString processed;
+    bool inBlockquote = false;
+    
+    for (int i = 0; i < lines.size(); ++i) {
+        QString line = lines[i];
+        QString trimmed = line.trimmed();
+        
+        if (trimmed == "<BLOCKQUOTE_START>") {
+            inBlockquote = true;
+            continue;
+        }
+        if (trimmed == "<BLOCKQUOTE_END>") {
+            inBlockquote = false;
+            continue;
+        }
+        if (trimmed == "<UL_START>" || trimmed == "<UL_END>" || 
+            trimmed == "<OL_START>" || trimmed == "<OL_END>") {
+            continue;
+        }
+        
+        if (inBlockquote && !trimmed.isEmpty()) {
+            // Добавляем > к каждой строке внутри цитаты
+            if (!trimmed.startsWith(">")) {
+                line = "> " + trimmed;
+            }
+        }
+        
+        processed += line + "\n";
+    }
+    result = processed;
+    
+    // 15. Очищаем лишние пустые строки (более 2 подряд)
+    result.replace(QRegularExpression("\\n{3,}"), "\n\n");
+    
+    // 16. Trim результата
     return result.trimmed();
 }

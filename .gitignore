@@ -1,16 +1,7 @@
 ```
-# CMake build artifacts
-build_tests/
-CMakeCache.txt
-CMakeFiles/
-
-# Test build artifacts
-test/*.o
-test/*.moc
-test/*_predefs.h
-test/output_*.md
-test/output_*.html
-test/parser_tests
-test/roundtrip_tests
-test/cmake.check_cache
+# Compiled and build artifacts
+*.o
+*.obj
+*.pro
+test/
 ```

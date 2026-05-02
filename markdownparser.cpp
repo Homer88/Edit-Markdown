@@ -343,14 +343,17 @@ QString MarkdownParser::parseParagraphs(const QString& text)
         QString line = lines[i];
         QString trimmed = line.trimmed();
         
-        // Проверяем, является ли строка блочным элементом HTML
+        // Проверяем, является ли строка блочным элементом HTML или плейсхолдером
         bool isBlockElement = trimmed.startsWith("<h") ||
                               trimmed.startsWith("<ul") ||
                               trimmed.startsWith("<ol") ||
                               trimmed.startsWith("<li") ||
                               trimmed.startsWith("<blockquote") ||
                               trimmed.startsWith("<pre") ||
-                              trimmed.startsWith("<hr");
+                              trimmed.startsWith("<hr") ||
+                              trimmed.contains("\x01CODEBLOCK") ||
+                              trimmed.contains("\x01INLINECODE") ||
+                              trimmed.contains("\x01INDENTEDCODE");
         
         if (isBlockElement) {
             // Если есть накопленный параграф, закрываем его

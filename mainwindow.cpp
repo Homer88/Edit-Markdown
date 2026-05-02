@@ -3086,10 +3086,8 @@ void MainWindow::onWysiwygTextChanged()
 void MainWindow::toggleDarkTheme()
 {
     m_isDarkMode = !m_isDarkMode;
-    m_darkThemeAction->setChecked(m_isDarkMode);
     
     if (m_isDarkMode) {
-        // Включаем тёмную тему
         qApp->setStyle(QStyleFactory::create("Fusion"));
         
         QPalette darkPalette;
@@ -3110,7 +3108,6 @@ void MainWindow::toggleDarkTheme()
         qApp->setPalette(darkPalette);
         qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
         
-        // Применяем тёмные стили к предпросмотру
         m_previewEditor->setStyleSheet(
             "QTextEdit { background-color: #2b2b2b; color: #e0e0e0; }"
         );
@@ -3118,17 +3115,18 @@ void MainWindow::toggleDarkTheme()
             "QPlainTextEdit { background-color: #1e1e1e; color: #d4d4d4; }"
         );
     } else {
-        // Выключаем тёмную тему (возвращаем системную)
         qApp->setPalette(QPalette());
         qApp->setStyle(QStyleFactory::create(""));
         qApp->setStyleSheet("");
         
-        // Возвращаем светлые стили
         m_previewEditor->setStyleSheet("");
         m_markdownEditor->setStyleSheet("");
     }
     
-    // Обновляем предпросмотр если он видим
+    if (m_highlighter) {
+        m_highlighter->updateColors();
+    }
+    
     if (m_isPreviewVisible) {
         updatePreview();
     }

@@ -10,3 +10,11 @@ test/output_*.html
 test/output_*.md
 *.tmp
 ```
+/build_cmake_new
+test/cb.txt
+test/cb3.txt
+test/cb2.txt
+test/cb4.txt
+/test/release
+/test/platforms
+CMakeLists.txt.user

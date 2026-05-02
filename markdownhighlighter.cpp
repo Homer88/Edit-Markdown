@@ -7,33 +7,8 @@
 MarkdownHighlighter::MarkdownHighlighter(QTextDocument *parent)
     : QSyntaxHighlighter(parent)
 {
-    // Получаем цвета из настроек
-    const auto& settings = Settings::instance();
+    updateColors();
     
-    // Настройка форматов с использованием цветов из настроек
-    keywordFormat.setForeground(settings.keywordColor());
-    keywordFormat.setFontWeight(QFont::Bold);
-
-    headerFormat.setForeground(settings.headerColor());
-    headerFormat.setFontWeight(QFont::Bold);
-    headerFormat.setFontPointSize(14);
-
-    boldFormat.setFontWeight(QFont::Bold);
-    boldFormat.setForeground(settings.boldColor());
-
-    italicFormat.setFontItalic(true);
-    italicFormat.setForeground(settings.italicColor());
-
-    codeFormat.setForeground(settings.codeColor());
-    codeFormat.setFontFamily("Courier New");
-    codeFormat.setBackground(settings.codeBackgroundColor());
-
-    linkFormat.setForeground(settings.linkColor());
-    linkFormat.setFontUnderline(true);
-
-    quoteFormat.setForeground(settings.quoteColor());
-    quoteFormat.setFontItalic(true);
-
     // Правила подсветки
     
     // Заголовки (# Header)
@@ -77,6 +52,36 @@ MarkdownHighlighter::MarkdownHighlighter(QTextDocument *parent)
 
     commentStartExpression = QRegularExpression("/\\*");
     commentEndExpression = QRegularExpression("\\*/");
+}
+
+void MarkdownHighlighter::updateColors()
+{
+    const auto& settings = Settings::instance();
+    
+    keywordFormat.setForeground(settings.keywordColor());
+    keywordFormat.setFontWeight(QFont::Bold);
+
+    headerFormat.setForeground(settings.headerColor());
+    headerFormat.setFontWeight(QFont::Bold);
+    headerFormat.setFontPointSize(14);
+
+    boldFormat.setFontWeight(QFont::Bold);
+    boldFormat.setForeground(settings.boldColor());
+
+    italicFormat.setFontItalic(true);
+    italicFormat.setForeground(settings.italicColor());
+
+    codeFormat.setForeground(settings.codeColor());
+    codeFormat.setFontFamily("Courier New");
+    codeFormat.setBackground(settings.codeBackgroundColor());
+
+    linkFormat.setForeground(settings.linkColor());
+    linkFormat.setFontUnderline(true);
+
+    quoteFormat.setForeground(settings.quoteColor());
+    quoteFormat.setFontItalic(true);
+    
+    rehighlight();
 }
 
 void MarkdownHighlighter::highlightBlock(const QString &text)

@@ -1,5 +1,19 @@
 #include "markdownparser.h"
 #include <QRegularExpression>
+#include <QDebug>
+#include <QTextDocument>
+
+static QString decodeHtmlEntities(const QString& text) {
+    QString result = text;
+    result.replace("&amp;", "&");
+    result.replace("&lt;", "<");
+    result.replace("&gt;", ">");
+    result.replace("&quot;", "\"");
+    result.replace("&#39;", "'");
+    result.replace("&apos;", "'");
+    result.replace("&nbsp;", " ");
+    return result;
+}
 
 /**
  * @brief Конструктор класса MarkdownParser
@@ -36,7 +50,9 @@ QString MarkdownParser::parse(const QString& markdown)
     html = parseImages(html);
     // Ссылки
     html = parseLinks(html);
-    // Восстанавливаем блоки кода и обрабатываем инлайн код
+    // Параграфы (перед восстановлением кода чтобы не ломать multi-line code blocks)
+    html = parseParagraphs(html);
+    // Восстанавливаем блоки кода и обрабатываем инлайн код (после параграфов)
     html = restoreAndParseCode(html);
     // Зачеркнутый текст
     html = parseStrikeThrough(html);
@@ -46,9 +62,8 @@ QString MarkdownParser::parse(const QString& markdown)
     html = parseItalic(html);
     // Математика LaTeX
     html = parseMath(html);
-    // Параграфы
-    html = parseParagraphs(html);
     
+    qDebug() << "[parse] FINAL HTML:" << html.left(200);
     return html;
 }
 
@@ -343,7 +358,7 @@ QString MarkdownParser::parseParagraphs(const QString& text)
         QString line = lines[i];
         QString trimmed = line.trimmed();
         
-        // Проверяем, является ли строка блочным элементом HTML
+        // Проверяем, является ли строка блочным элементом HTML или плейсхолдером кода
         bool isBlockElement = trimmed.startsWith("<h") ||
                               trimmed.startsWith("<ul") ||
                               trimmed.startsWith("<ol") ||
@@ -361,7 +376,10 @@ QString MarkdownParser::parseParagraphs(const QString& text)
                               trimmed.startsWith("</tr") ||
                               trimmed.startsWith("<td") ||
                               trimmed.startsWith("</td") ||
-                              trimmed.startsWith("</th");
+                              trimmed.startsWith("</th") ||
+                              trimmed.startsWith("%%_CODEBLOCK_") ||
+                              trimmed.startsWith("%%_INDENTEDCODE_") ||
+                              trimmed.startsWith("%%_INLINECODE_");
         
         if (isBlockElement) {
             // Если есть накопленный параграф, закрываем его
@@ -412,8 +430,8 @@ QString MarkdownParser::parseTables(const QString& text)
         QRegularExpression tableRow("^\\|(.*)\\|$");
         QRegularExpressionMatch match = tableRow.match(line);
         
-        // Проверяем, является ли строка разделителем таблицы (содержит | и -)
-        QRegularExpression tableSeparator("^\\|?[\\s:|-]+\\|?[\\s:|-]*$");
+        // Проверяем, является ли строка разделителем таблицы (содержит только |, -, :, пробелы)
+        QRegularExpression tableSeparator("^\\|?[\\s:]*-+[\\s:|-]*$");
         QRegularExpressionMatch sepMatch = tableSeparator.match(line.trimmed());
         
         if (match.hasMatch() && !sepMatch.hasMatch()) {
@@ -434,7 +452,7 @@ QString MarkdownParser::parseTables(const QString& text)
                         QString row = tableRows[j];
                         
                         // Пропускаем строку-разделитель
-                        if (row.contains(QRegularExpression("^\\|[\\s:-]+\\|$"))) {
+                        if (row.contains(QRegularExpression("^\\|[\\s:]*-+[\\s:|-]*\\|$"))) {
                             continue;
                         }
                         
@@ -478,7 +496,7 @@ QString MarkdownParser::parseTables(const QString& text)
             QString row = tableRows[j];
             
             // Пропускаем строку-разделитель
-            if (row.contains(QRegularExpression("^\\|[\\s:-]+\\|$"))) {
+            if (row.contains(QRegularExpression("^\\|[\\s:]*-+[\\s:|-]*\\|$"))) {
                 continue;
             }
             
@@ -542,29 +560,62 @@ QString MarkdownParser::preserveCodeBlocks(const QString& text)
 {
     QString result = text;
     
-    // Сохраняем блоки кода с ``` в плейсхолдеры
+    // Сначала собираем все совпадения для code blocks, затем заменяем с конца
     QRegularExpression codeBlock("```([a-zA-Z]*)\\n?([\\s\\S]*?)```");
-    QRegularExpressionMatchIterator it = codeBlock.globalMatch(result);
+    QList<QPair<int, int>> codeBlockPositions;
+    QList<QPair<QString, QString>> codeBlockData;
+    
+    QRegularExpressionMatchIterator it = codeBlock.globalMatch(text);
     int idx = 0;
     while (it.hasNext()) {
         QRegularExpressionMatch match = it.next();
-        QString lang = match.captured(1);
-        QString code = match.captured(2);
-        QString placeholder = QString("\x01CODEBLOCK%1\x01").arg(idx++);
-        codeBlocks_.insert(placeholder, QString("<pre><code class=\"language-%1\">%2</code></pre>").arg(lang).arg(code.toHtmlEscaped()));
-        result.replace(match.capturedStart(), match.capturedLength(), placeholder);
+        codeBlockPositions.append(qMakePair(match.capturedStart(), match.capturedLength()));
+        codeBlockData.append(qMakePair(match.captured(1), match.captured(2)));
+        idx++;
+    }
+    
+    qDebug() << "[preserveCodeBlocks] Found" << codeBlockPositions.size() << "code blocks in input:" << text.left(50);
+    
+    // Заменяем с конца к началу чтобы позиции не сдвигались
+    for (int i = codeBlockPositions.size() - 1; i >= 0; --i) {
+        int pos = codeBlockPositions[i].first;
+        int len = codeBlockPositions[i].second;
+        QString lang = codeBlockData[i].first;
+        QString code = codeBlockData[i].second;
+        QString placeholder = QString("%%_CODEBLOCK_%1_%%").arg(i);
+        qDebug() << "[preserveCodeBlocks] Replacing code block" << i << "at pos" << pos << "lang:" << lang << "code:" << code.left(30);
+        QString htmlCode;
+        if (lang.isEmpty()) {
+            htmlCode = QString("<pre><code>%1</code></pre>").arg(code.toHtmlEscaped());
+        } else {
+            htmlCode = QString("<pre><code class=\"language-%1\">%2</code></pre>").arg(lang).arg(code.toHtmlEscaped());
+        }
+        codeBlocks_.insert(placeholder, htmlCode);
+        result.replace(pos, len, placeholder);
     }
     
     // Сохраняем инлайн код `...` в плейсхолдеры
     QRegularExpression inlineCode("`([^`]+)`");
+    QList<QPair<int, int>> inlineCodePositions;
+    QList<QString> inlineCodeData;
+    
     it = inlineCode.globalMatch(result);
     idx = 0;
     while (it.hasNext()) {
         QRegularExpressionMatch match = it.next();
-        QString code = match.captured(1);
-        QString placeholder = QString("\x01INLINECODE%1\x01").arg(idx++);
+        inlineCodePositions.append(qMakePair(match.capturedStart(), match.capturedLength()));
+        inlineCodeData.append(match.captured(1));
+        idx++;
+    }
+    
+    // Заменяем с конца к началу
+    for (int i = inlineCodePositions.size() - 1; i >= 0; --i) {
+        int pos = inlineCodePositions[i].first;
+        int len = inlineCodePositions[i].second;
+        QString code = inlineCodeData[i];
+        QString placeholder = QString("%%_INLINECODE_%1_%%").arg(i);
         inlineCodes_.insert(placeholder, QString("<code>%1</code>").arg(code.toHtmlEscaped()));
-        result.replace(match.capturedStart(), match.capturedLength(), placeholder);
+        result.replace(pos, len, placeholder);
     }
     
     // Сохраняем indented code blocks (4 пробела или таб)
@@ -589,7 +640,7 @@ QString MarkdownParser::preserveCodeBlocks(const QString& text)
             if (inIndentedCode) {
                 // Конец блока кода
                 if (!indentedCodeContent.trimmed().isEmpty()) {
-                    QString placeholder = QString("\x01INDENTEDCODE%1\x01").arg(codeBlocks_.size());
+                    QString placeholder = QString("%%_INDENTEDCODE_%1_%%").arg(codeBlocks_.size());
                     codeBlocks_.insert(placeholder, QString("<pre><code>%1</code></pre>").arg(indentedCodeContent.trimmed().toHtmlEscaped()));
                     processed += placeholder + "\n";
                 }
@@ -601,7 +652,7 @@ QString MarkdownParser::preserveCodeBlocks(const QString& text)
     }
     // Обрабатываем конец файла
     if (inIndentedCode && !indentedCodeContent.trimmed().isEmpty()) {
-        QString placeholder = QString("\x01INDENTEDCODE%1\x01").arg(codeBlocks_.size());
+        QString placeholder = QString("%%_INDENTEDCODE_%1_%%").arg(codeBlocks_.size());
         codeBlocks_.insert(placeholder, QString("<pre><code>%1</code></pre>").arg(indentedCodeContent.trimmed().toHtmlEscaped()));
         processed += placeholder + "\n";
     }
@@ -618,10 +669,13 @@ QString MarkdownParser::restoreAndParseCode(const QString& text)
 {
     QString result = text;
     
+    qDebug() << "[restoreAndParseCode] Restoring" << codeBlocks_.size() << "code blocks and" << inlineCodes_.size() << "inline codes";
+    
     // Восстанавливаем блоки кода
     QMapIterator<QString, QString> it(codeBlocks_);
     while (it.hasNext()) {
         it.next();
+        qDebug() << "[restoreAndParseCode] Replacing" << it.key() << "with:" << it.value().left(50);
         result.replace(it.key(), it.value());
     }
     codeBlocks_.clear();
@@ -634,6 +688,7 @@ QString MarkdownParser::restoreAndParseCode(const QString& text)
     }
     inlineCodes_.clear();
     
+    qDebug() << "[restoreAndParseCode] Final result:" << result.left(100);
     return result;
 }
 
@@ -667,13 +722,32 @@ QString MarkdownParser::htmlToMarkdown(const QString& html)
 {
     QString result = html;
     
+    // 0. Удаляем <style> и <script> блоки целиком, чтобы CSS/JS не попали в Markdown
+    result.replace(QRegularExpression("<style[^>]*>[\\s\\S]*?</style>", QRegularExpression::DotMatchesEverythingOption), "");
+    result.replace(QRegularExpression("<script[^>]*>[\\s\\S]*?</script>", QRegularExpression::DotMatchesEverythingOption), "");
+    result.replace(QRegularExpression("<html[^>]*>|</html>", QRegularExpression::DotMatchesEverythingOption), "");
+    result.replace(QRegularExpression("<head[^>]*>|</head>", QRegularExpression::DotMatchesEverythingOption), "");
+    result.replace(QRegularExpression("<body[^>]*>|</body>", QRegularExpression::DotMatchesEverythingOption), "");
+    
     // 1. Сохраняем блоки кода <pre><code>...</code></pre> и <pre><code class="...">...</code></pre> как ```...```
     QRegularExpression preCode("<pre><code[^>]*>([\\s\\S]*?)</code></pre>", QRegularExpression::DotMatchesEverythingOption);
-    result.replace(preCode, "```\n\\1\n```");
+    QRegularExpressionMatchIterator preCodeIter = preCode.globalMatch(result);
+    while (preCodeIter.hasNext()) {
+        QRegularExpressionMatch match = preCodeIter.next();
+        QString codeContent = decodeHtmlEntities(match.captured(1));
+        QString replacement = "```\n" + codeContent + "\n```";
+        result.replace(match.capturedStart(), match.capturedLength(), replacement);
+    }
     
     // 2. Сохраняем инлайн код <code>...</code> как `...`
     QRegularExpression inlineCode("<code>([^<]+)</code>");
-    result.replace(inlineCode, "`\\1`");
+    QRegularExpressionMatchIterator inlineCodeIter = inlineCode.globalMatch(result);
+    while (inlineCodeIter.hasNext()) {
+        QRegularExpressionMatch match = inlineCodeIter.next();
+        QString codeContent = decodeHtmlEntities(match.captured(1));
+        QString replacement = "`" + codeContent + "`";
+        result.replace(match.capturedStart(), match.capturedLength(), replacement);
+    }
     
     // 3. Заголовки <h1>-<h6> → #, ##, ### и т.д.
     QRegularExpression h1("<h1[^>]*>(.+?)</h1>", QRegularExpression::DotMatchesEverythingOption);
@@ -785,19 +859,6 @@ QString MarkdownParser::htmlToMarkdown(const QString& html)
     }
     
     // 10. Цитаты <blockquote>...</blockquote> → обрабатываем построчно
-    // Сохраняем таблицы в специальные маркеры
-    QRegularExpression tableSave("<table[^>]*>([\\s\\S]*?)</table>", QRegularExpression::DotMatchesEverythingOption);
-    QStringList savedTables;
-    int savedTableIdx = 0;
-    QRegularExpressionMatchIterator savedTableIter = tableSave.globalMatch(result);
-    while (savedTableIter.hasNext()) {
-        QRegularExpressionMatch match = savedTableIter.next();
-        result.replace(match.capturedStart(), match.capturedLength(), 
-                      QString("\n<TABLE_%1>\n").arg(savedTableIdx));
-        savedTables << match.captured(0);
-        savedTableIdx++;
-    }
-    
     // Обрабатываем вложенные blockquote
     while (result.contains("<blockquote")) {
         QRegularExpression bqOpen("<blockquote[^>]*>");
@@ -857,61 +918,28 @@ QString MarkdownParser::htmlToMarkdown(const QString& html)
     QRegularExpression inlineMath("<span class=\"math-inline\">\\$([^$]+?)\\$</span>");
     result.replace(inlineMath, "$\\1$");
     
-    // 16. Удаляем оставшиеся HTML теги (span, div, p и т.д.)
+    // 16. Удаляем оставшиеся HTML теги (span, div и т.д.)
     QRegularExpression remainingTags("<(?!/?(?:h[1-6]|b|strong|i|em|s|strike|del|a|img|ul|ol|li|blockquote|pre|code|table|tr|td|th)[^>]*>)[^>]+>");
     result.replace(remainingTags, "");
     
     // Также удаляем теги параграфов
     result.replace(QRegularExpression("<p[^>]*>(.+?)</p>"), "\\1\n");
+    result.replace(QRegularExpression("</?p>"), "");
     
-    // 17. Теперь обрабатываем цитаты построчно
-    QStringList lines = result.split('\n');
-    QString processed;
-    bool inBlockquote = false;
-    int blockquoteLevel = 0;
+    // Удаляем маркеры списков
+    result.replace(QRegularExpression("<UL_START>"), "");
+    result.replace(QRegularExpression("<UL_END>"), "");
+    result.replace(QRegularExpression("<OL_START>"), "");
+    result.replace(QRegularExpression("<OL_END>"), "");
     
-    for (int i = 0; i < lines.size(); ++i) {
-        QString line = lines[i];
-        QString trimmed = line.trimmed();
-        
-        if (trimmed == "<BLOCKQUOTE_START>") {
-            inBlockquote = true;
-            blockquoteLevel++;
-            continue;
-        }
-        if (trimmed == "<BLOCKQUOTE_END>") {
-            inBlockquote = false;
-            if (blockquoteLevel > 0) blockquoteLevel--;
-            continue;
-        }
-        if (trimmed == "<UL_START>" || trimmed == "<UL_END>" || 
-            trimmed == "<OL_START>" || trimmed == "<OL_END>") {
-            continue;
-        }
-        
-        if (inBlockquote && !trimmed.isEmpty()) {
-            // Добавляем > к каждой строке внутри цитаты
-            QString prefix;
-            for (int j = 0; j < blockquoteLevel; ++j) {
-                prefix += "> ";
-            }
-            if (!trimmed.startsWith(">")) {
-                line = prefix + trimmed;
-            }
-        }
-        
-        processed += line + "\n";
-    }
-    result = processed;
-    
-    // 18. Восстанавливаем таблицы
+    // Восстанавливаем сохранённые таблицы
     for (int i = 0; i < tables.size(); ++i) {
-        result.replace(QString("<TABLE_%1>").arg(i), "\n" + tables[i]);
+        result.replace(QString("\n<TABLE_%1>\n").arg(i), "\n" + tables[i] + "\n");
     }
     
-    // 19. Очищаем лишние пустые строки (более 2 подряд)
+    // Очищаем лишние пустые строки (более 2 подряд)
     result.replace(QRegularExpression("\\n{3,}"), "\n\n");
     
-    // 20. Trim результата
+    // Trim результата
     return result.trimmed();
 }

@@ -12,6 +12,7 @@ class MarkdownHighlighter : public QSyntaxHighlighter
     Q_OBJECT
 public:
     explicit MarkdownHighlighter(QTextDocument *parent = nullptr);
+    void updateColors();
 
 protected:
     void highlightBlock(const QString &text) override;

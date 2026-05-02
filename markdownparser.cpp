@@ -47,11 +47,13 @@ QString MarkdownParser::parseHeaders(const QString& text)
     
     // Сначала обрабатываем альтернативные заголовки (Setext-style) до того, как они будут затронуты другими правилами
     // Alt H1: текст с === на следующей строке
-    QRegularExpression altH1("^(.+?)\\n===+\\s*$", QRegularExpression::MultilineOption);
+    // Используем более строгое регулярное выражение - захватываем только одну строку текста без HTML тегов
+    QRegularExpression altH1("^([^<>\n]+?)\\n===+\\s*$", QRegularExpression::MultilineOption);
     result.replace(altH1, "<h1>\\1</h1>");
     
     // Alt H2: текст с --- на следующей строке
-    QRegularExpression altH2("^(.+?)\\n---+\\s*$", QRegularExpression::MultilineOption);
+    // Используем более строгое регулярное выражение - захватываем только одну строку текста без HTML тегов
+    QRegularExpression altH2("^([^<>\n]+?)\\n---+\\s*$", QRegularExpression::MultilineOption);
     result.replace(altH2, "<h2>\\1</h2>");
     
     // Заголовок 6 уровня (######)

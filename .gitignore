@@ -2,9 +2,16 @@
 # Compiled and build artifacts
 *.o
 *.obj
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
 *.out
-build/
-dist/
+test/*.o
+test/*_tests
+test/*.pro
+test/*.moc
 
 # Dependencies
 node_modules/
@@ -12,24 +19,47 @@ venv/
 .venv/
 __pycache__/
 *.egg-info/
+dist/
+build/
+target/
+.gradle/
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
+*.swo
+*.bak
+*.~
+*~
 
 # Environment
 .env
 .env.local
-*.env.*
+.env.*
+.env~*
 
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Test outputs
-test/*.o
-test/*output_*.html
-test/*output_*.md
-test/checksums.txt
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# MyPy
+.mypy_cache/
+
+# PyTest
+.pytest_cache/
+
+# Git
+.git/
 ```

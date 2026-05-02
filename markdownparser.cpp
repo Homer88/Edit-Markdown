@@ -18,8 +18,10 @@ QString MarkdownParser::parse(const QString& markdown)
     QString html = markdown;
     
     // Последовательная обработка всех элементов Markdown
-    html = parseHorizontalRules(html);
+    // Сначала заголовки (включая альтернативные с === и ---), чтобы они не были затронуты другими правилами
     html = parseHeaders(html);
+    // Затем горизонтальные линии (после заголовков, чтобы --- в заголовках не стали <hr>)
+    html = parseHorizontalRules(html);
     html = parseBlockquotes(html);
     html = parseCode(html);
     html = parseTables(html);  // Добавляем парсинг таблиц перед списками
@@ -42,6 +44,15 @@ QString MarkdownParser::parse(const QString& markdown)
 QString MarkdownParser::parseHeaders(const QString& text)
 {
     QString result = text;
+    
+    // Сначала обрабатываем альтернативные заголовки (Setext-style) до того, как они будут затронуты другими правилами
+    // Alt H1: текст с === на следующей строке
+    QRegularExpression altH1("^(.+?)\\n===+\\s*$", QRegularExpression::MultilineOption);
+    result.replace(altH1, "<h1>\\1</h1>");
+    
+    // Alt H2: текст с --- на следующей строке
+    QRegularExpression altH2("^(.+?)\\n---+\\s*$", QRegularExpression::MultilineOption);
+    result.replace(altH2, "<h2>\\1</h2>");
     
     // Заголовок 6 уровня (######)
     QRegularExpression h6("^######\\s+(.+)$", QRegularExpression::MultilineOption);

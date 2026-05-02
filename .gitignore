@@ -1,7 +1,12 @@
 ```
 # Compiled and build artifacts
 *.o
-*.obj
 *.pro
-test/
+# Test artifacts
+test/*.o
+test/*.pro
+# Temporary and output files
+test/output_*.html
+test/output_*.md
+*.tmp
 ```

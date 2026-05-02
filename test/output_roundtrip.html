@@ -26,11 +26,12 @@
 <h2>7. Blockquotes</h2>
 <blockquote>Simple quote
 <p><br>> Nested<br><br><br><br>Back<br><br><h4>Header inside</h4><br><br>- list<br><br><code>code</code><br></blockquote></p>
-<h2>8. Code</h2>
-<p><code>inline</code></p>
-<p>// indented block<br>int main() {<br>return 0;<br>}</p>
-<p>plain indented block without highlighting</p>
-<p>def hello():<br>print("Python")</p>
+<h2>8.<code>inline</code>inline`</h2>
+<pre><code>// indented block
+<p>int main() {<br>return 0;<br>}</code></pre></p>
+<pre><code>plain indented block without highlighting</code></pre>
+<pre><code>def hello():
+<p>print(&quot;Python&quot;)</code></pre></p>
 <h2>## 9. Horizontal rules</h2>
 <hr>
 <hr>
@@ -47,7 +48,7 @@
 <h2>14. Subscript / Superscript</h2>
 <p>H<sub>2</sub>O<br>X<sup>2</sup><br>(Some: ^superscript^ and ~subscript~)</p>
 <h2>15. Math (LaTeX)</h2>
-<p>Inline: $E=mc^2$<br>Block:<br>$$<br>\int_a^b x^2 dx = \frac{b^3-a^3}{3}<br>$$</p>
+<p>Inline: <span class="math-inline">$E=mc^2$</span><br>Block:<br><span class="math-display">$<span class="math-inline">$<br>\int_a^b x^2 dx = \frac{b^3-a^3}{3}<br>$</span>$</span></p>
 <h2>16. HTML inside</h2>
 <p><div style="color:red;">Red text</div><br><span style="background:yellow;">Highlight</span><br><!-- HTML comment --></p>
 <h2>17. Escaping special chars</h2>
@@ -64,10 +65,12 @@
 <p>https://example.com becomes link</p>
 <h2>22. Mixed example</h2>
 <blockquote><b>Note:</b>
-<p><br><i>Inside quote</i><br><br>- [x] task<br></blockquote><br>rust<br>fn main() {}</p>
+<p><br><i>Inside quote</i><br><br>- [x] task<br></blockquote></p>
+<pre><code>rust
+<p>fn main() {}</code></pre></p>
 <h2>23. Nested list with code and quote</h2>
 <ol><li>Step 1</li></ol><ul><li>Sub A</li><li>Sub B</li></ul>
-<p>echo "inside"</p>
+<pre><code>echo &quot;inside&quot;</code></pre>
 <ol><li>Step 2</li></ol>   > Quote inside list
 <h2>24. Spaces at line start</h2>
 <p>This line starts with spaces (may be code)</p>

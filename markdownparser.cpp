@@ -22,6 +22,7 @@ QString MarkdownParser::parse(const QString& markdown)
     html = parseHeaders(html);
     html = parseBlockquotes(html);
     html = parseCode(html);
+    html = parseTables(html);  // Добавляем парсинг таблиц перед списками
     html = parseLists(html);
     html = parseImages(html);
     html = parseLinks(html);
@@ -353,6 +354,120 @@ QString MarkdownParser::parseParagraphs(const QString& text)
     return processed;
 }
 
+/**
+ * @brief Парсит таблицы в формате GFM (GitHub Flavored Markdown)
+ * @param text Текст для обработки
+ * @return QString Текст с обработанными таблицами
+ */
+QString MarkdownParser::parseTables(const QString& text)
+{
+    QStringList lines = text.split('\n');
+    QString result;
+    bool inTable = false;
+    QStringList tableRows;
+    
+    for (int i = 0; i < lines.size(); ++i) {
+        QString line = lines[i];
+        QRegularExpression tableRow("^\\|(.*)\\|$");
+        QRegularExpressionMatch match = tableRow.match(line);
+        
+        // Проверяем, является ли строка разделителем таблицы (содержит | и -)
+        QRegularExpression tableSeparator("^\\|?[\\s:|-]+\\|?[\\s:|-]*$");
+        QRegularExpressionMatch sepMatch = tableSeparator.match(line.trimmed());
+        
+        if (match.hasMatch() && !sepMatch.hasMatch()) {
+            // Это строка таблицы
+            if (!inTable) {
+                inTable = true;
+                tableRows.clear();
+            }
+            tableRows << line;
+        } else {
+            if (inTable) {
+                // Конец таблицы - обрабатываем накопленные строки
+                if (tableRows.size() >= 2) {
+                    // Есть как минимум заголовок и разделитель
+                    result += "<table>\n";
+                    
+                    for (int j = 0; j < tableRows.size(); ++j) {
+                        QString row = tableRows[j];
+                        
+                        // Пропускаем строку-разделитель
+                        if (row.contains(QRegularExpression("^\\|[\\s:-]+\\|$"))) {
+                            continue;
+                        }
+                        
+                        // Извлекаем ячейки
+                        QStringList cells;
+                        QString rowContent = row.mid(1, row.length() - 2); // убираем крайние |
+                        cells = rowContent.split('|');
+                        
+                        result += "<tr>";
+                        for (const QString& cell : cells) {
+                            QString cellContent = cell.trimmed();
+                            // Определяем тип ячейки (заголовок или данные)
+                            if (j == 0) {
+                                result += "<th>" + cellContent + "</th>";
+                            } else {
+                                result += "<td>" + cellContent + "</td>";
+                            }
+                        }
+                        result += "</tr>\n";
+                    }
+                    
+                    result += "</table>\n";
+                } else {
+                    // Недостаточно строк для таблицы, выводим как есть
+                    for (const QString& row : tableRows) {
+                        result += row + "\n";
+                    }
+                }
+                inTable = false;
+                tableRows.clear();
+            }
+            result += line + "\n";
+        }
+    }
+    
+    // Обрабатываем таблицу в конце файла
+    if (inTable && tableRows.size() >= 2) {
+        result += "<table>\n";
+        
+        for (int j = 0; j < tableRows.size(); ++j) {
+            QString row = tableRows[j];
+            
+            // Пропускаем строку-разделитель
+            if (row.contains(QRegularExpression("^\\|[\\s:-]+\\|$"))) {
+                continue;
+            }
+            
+            // Извлекаем ячейки
+            QStringList cells;
+            QString rowContent = row.mid(1, row.length() - 2);
+            cells = rowContent.split('|');
+            
+            result += "<tr>";
+            for (const QString& cell : cells) {
+                QString cellContent = cell.trimmed();
+                if (j == 0) {
+                    result += "<th>" + cellContent + "</th>";
+                } else {
+                    result += "<td>" + cellContent + "</td>";
+                }
+            }
+            result += "</tr>\n";
+        }
+        
+        result += "</table>\n";
+    } else if (inTable) {
+        for (const QString& row : tableRows) {
+            result += row + "\n";
+        }
+    }
+    
+    return result.trimmed();
+}
+
 
 /**
  * @brief Преобразует HTML обратно в Markdown (для синхронизации WYSIWYG -> Markdown)
@@ -413,31 +528,99 @@ QString MarkdownParser::htmlToMarkdown(const QString& html)
     QRegularExpression image2("<img[^>]*alt=\"([^\"]*)\"[^>]*src=\"([^\"]+)\"[^>]*>");
     result.replace(image2, "![\\1](\\2)");
     
-    // 9. Цитаты <blockquote>...</blockquote> → обрабатываем построчно
+    // 9. Таблицы - обрабатываем <table> блоки
+    // Сначала сохраняем таблицы в специальные маркеры
+    QRegularExpression table("<table[^>]*>([\\s\\S]*?)</table>", QRegularExpression::DotMatchesEverythingOption);
+    QStringList tables;
+    int tableIndex = 0;
+    QRegularExpressionMatchIterator tableIter = table.globalMatch(result);
+    while (tableIter.hasNext()) {
+        QRegularExpressionMatch match = tableIter.next();
+        QString tableContent = match.captured(1);
+        
+        // Парсим строки таблицы
+        QStringList rows;
+        QRegularExpression tr("<tr[^>]*>([\\s\\S]*?)</tr>", QRegularExpression::DotMatchesEverythingOption);
+        QRegularExpressionMatchIterator trIter = tr.globalMatch(tableContent);
+        
+        while (trIter.hasNext()) {
+            QRegularExpressionMatch trMatch = trIter.next();
+            QString rowContent = trMatch.captured(1);
+            
+            // Извлекаем ячейки (th или td)
+            QStringList cells;
+            QRegularExpression cell("<t[hd][^>]*>([\\s\\S]*?)</t[hd]>", QRegularExpression::DotMatchesEverythingOption);
+            QRegularExpressionMatchIterator cellIter = cell.globalMatch(rowContent);
+            
+            while (cellIter.hasNext()) {
+                QRegularExpressionMatch cellMatch = cellIter.next();
+                QString cellText = cellMatch.captured(1).trimmed();
+                // Удаляем лишние HTML теги из ячейки
+                cellText.replace(QRegularExpression("<br[^>]*>"), "  \n");
+                cells << cellText;
+            }
+            
+            if (!cells.isEmpty()) {
+                rows << "|" + cells.join("|") + "|";
+            }
+        }
+        
+        // Формируем markdown таблицу
+        if (!rows.isEmpty()) {
+            QString markdownTable;
+            int colCount = rows.first().count('|') - 2; // количество колонок
+            
+            for (int i = 0; i < rows.size(); ++i) {
+                markdownTable += rows[i] + "\n";
+                if (i == 0) {
+                    // Добавляем разделитель после заголовка
+                    markdownTable += "|" + QString("-|-").repeated(colCount) + "\n";
+                }
+            }
+            
+            // Заменяем таблицу на маркер
+            result.replace(match.capturedStart(), match.capturedLength(), 
+                          QString("\n<TABLE_%1>\n").arg(tableIndex));
+            tables << markdownTable;
+            tableIndex++;
+        }
+    }
+    
+    // 10. Цитаты <blockquote>...</blockquote> → обрабатываем построчно
     // Сначала заменяем opening/closing теги на маркеры
     result.replace(QRegularExpression("<blockquote[^>]*>"), "\n<BLOCKQUOTE_START>\n");
     result.replace(QRegularExpression("</blockquote>"), "\n<BLOCKQUOTE_END>\n");
     
-    // 10. Списки - сначала маркированные
+    // 11. Списки - сначала маркированные
     result.replace(QRegularExpression("<ul[^>]*>"), "\n<UL_START>\n");
     result.replace(QRegularExpression("</ul>"), "\n<UL_END>\n");
     
-    // 11. Нумерованные списки
+    // 12. Нумерованные списки
     result.replace(QRegularExpression("<ol[^>]*>"), "\n<OL_START>\n");
     result.replace(QRegularExpression("</ol>"), "\n<OL_END>\n");
     
-    // 12. Элементы списка <li> → - ...
+    // 13. Элементы списка <li> → - ...
     QRegularExpression listItem("<li[^>]*>(.+?)</li>", QRegularExpression::DotMatchesEverythingOption);
     result.replace(listItem, "- \\1\n");
     
-    // 13. Удаляем оставшиеся HTML теги (span, div и т.д.)
-    QRegularExpression remainingTags("<[^>]+>");
+    // 14. <br> → два пробела и перевод строки
+    result.replace(QRegularExpression("<br[^>]*>"), "  \n");
+    
+    // 15. <hr> → ---
+    result.replace(QRegularExpression("<hr[^>]*>"), "\n---\n");
+    
+    // 16. Удаляем оставшиеся HTML теги (span, div, p и т.д.)
+    QRegularExpression remainingTags("<(?!/?(?:h[1-6]|b|strong|i|em|s|strike|del|a|img|ul|ol|li|blockquote|pre|code|table|tr|td|th)[^>]*>)[^>]+>");
     result.replace(remainingTags, "");
     
-    // 14. Теперь обрабатываем цитаты построчно
+    // Также удаляем теги параграфов
+    result.replace(QRegularExpression("<p[^>]*>(.+?)</p>"), "\\1\n");
+    
+    // 17. Теперь обрабатываем цитаты построчно
     QStringList lines = result.split('\n');
     QString processed;
     bool inBlockquote = false;
+    int blockquoteLevel = 0;
     
     for (int i = 0; i < lines.size(); ++i) {
         QString line = lines[i];
@@ -445,10 +628,12 @@ QString MarkdownParser::htmlToMarkdown(const QString& html)
         
         if (trimmed == "<BLOCKQUOTE_START>") {
             inBlockquote = true;
+            blockquoteLevel++;
             continue;
         }
         if (trimmed == "<BLOCKQUOTE_END>") {
             inBlockquote = false;
+            if (blockquoteLevel > 0) blockquoteLevel--;
             continue;
         }
         if (trimmed == "<UL_START>" || trimmed == "<UL_END>" || 
@@ -458,8 +643,12 @@ QString MarkdownParser::htmlToMarkdown(const QString& html)
         
         if (inBlockquote && !trimmed.isEmpty()) {
             // Добавляем > к каждой строке внутри цитаты
+            QString prefix;
+            for (int j = 0; j < blockquoteLevel; ++j) {
+                prefix += "> ";
+            }
             if (!trimmed.startsWith(">")) {
-                line = "> " + trimmed;
+                line = prefix + trimmed;
             }
         }
         
@@ -467,9 +656,14 @@ QString MarkdownParser::htmlToMarkdown(const QString& html)
     }
     result = processed;
     
-    // 15. Очищаем лишние пустые строки (более 2 подряд)
+    // 18. Восстанавливаем таблицы
+    for (int i = 0; i < tables.size(); ++i) {
+        result.replace(QString("<TABLE_%1>").arg(i), "\n" + tables[i]);
+    }
+    
+    // 19. Очищаем лишние пустые строки (более 2 подряд)
     result.replace(QRegularExpression("\\n{3,}"), "\n\n");
     
-    // 16. Trim результата
+    // 20. Trim результата
     return result.trimmed();
 }

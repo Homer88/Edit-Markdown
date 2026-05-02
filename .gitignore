@@ -2,42 +2,21 @@
 # Compiled and build artifacts
 *.o
 *.obj
-*.cpp
-moc_*.cpp
-qrc_*.cpp
-moc_*.h
-*.a
-*.so
-*.dylib
-*.dll
-*.exe
 *.out
-
-# Build directories
 build/
 dist/
-target/
 
 # Dependencies
 node_modules/
-.venv/
 venv/
+.venv/
 __pycache__/
 *.egg-info/
-.Python
-
-# Qt specific
-*.qm
-*.qrc
-*.ui
-Makefile
-*.pro.user
 
 # Logs and temp files
 *.log
 *.tmp
 *.swp
-*.swo
 
 # Environment
 .env
@@ -47,19 +26,10 @@ Makefile
 # Editors
 .vscode/
 .idea/
-*.swp
-*~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Tests
+# Test outputs
 test/*.o
-test/build/
+test/*output_*.html
+test/*output_*.md
+test/checksums.txt
 ```

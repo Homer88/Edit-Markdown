@@ -1,8 +1,29 @@
 ```
-# Compiled and build artifacts
-*.o
-*.obj
+# CMake build artifacts
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CTestCostData.txt
+LastTest.log
+
+# Qt/MOC generated files
+moc_*.cpp
+moc_*.cpp_parameters
 *.moc
-test/*.o
-test/*.moc
+qrc_*.cpp
+*_autogen/
+
+# Hunspell library build
+libhunspell.a
+
+# Temporary and log files
+*.log
+*.tmp
+*.swp
+
+# Progress and dependency tracking
+progress.marks
+*.d
 ```

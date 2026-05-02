@@ -1,29 +1,65 @@
 ```
-# CMake build artifacts
+# Compiled and build artifacts
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+test/*.o
+test/*_tests
+test/*.pro
+test/*.moc
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
+dist/
 build/
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-CTestCostData.txt
-LastTest.log
+target/
+.gradle/
 
-# Qt/MOC generated files
-moc_*.cpp
-moc_*.cpp_parameters
-*.moc
-qrc_*.cpp
-*_autogen/
-
-# Hunspell library build
-libhunspell.a
-
-# Temporary and log files
+# Logs and temp files
 *.log
 *.tmp
 *.swp
+*.swo
+*.bak
+*.~
+*~
 
-# Progress and dependency tracking
-progress.marks
-*.d
+# Environment
+.env
+.env.local
+.env.*
+.env~*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# MyPy
+.mypy_cache/
+
+# PyTest
+.pytest_cache/
+
+# Git
+.git/
 ```

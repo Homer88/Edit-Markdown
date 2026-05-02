@@ -1,0 +1,76 @@
+<h1>Markdown Syntax Test (Full)</h1>
+<h2>1. Headers</h2>
+<h1>H1</h1>
+<h2>H2</h2>
+<h3>H3</h3>
+<h4>H4</h4>
+<h5>H5</h5>
+<h6>H6</h6>
+<p>Alt H1<br>===<br>Alt H2</p>
+<hr>
+<h2>2. Paragraphs & line breaks</h2>
+<p>Line 1 (two spaces at end)<br>Line 2<br>Empty line -> new paragraph.</p>
+<h2>3. Text styles</h2>
+<p><i>Italic</i> <i>Italic</i><br><b>Bold</b> <b>Bold</b><br><b><i>Bold italic</b></i> <b><i>Bold italic</b></i><br><s>Strikethrough</s><br><code>inline code</code><br><u>Underline</u><br><mark>Marked</mark></p>
+<h2>4. Lists</h2>
+<ul><li>Item 1</li><li>Subitem</li><li>Asterisk</li><li>Plus</li></ul>
+<ol><li>First</li><li>Sub</li><li>Second</li></ol>
+<p>Task lists:</p>
+<ul><li>[x] Done</li><li>[ ] Pending</li></ul>
+<h2>5. Links</h2>
+<p><a href="https://example.com">Text</a><br><a href="https://example.com "Title"">With title</a></p>
+<https://auto.link>
+<p><email@example.com><br>[ref][id]<br>[id]: https://example.com</p>
+<h2>6. Images</h2>
+<p><img src="https://picsum.photos/200/100 "Title"" alt="Alt"><br>![ref][logo]<br>[logo]: https://picsum.photos/id/1/200/100</p>
+<h2>7. Blockquotes</h2>
+<blockquote>Simple quote
+<p><br>> Nested<br><br><br><br>Back<br><br><h4>Header inside</h4><br><br>- list<br><br><code>code</code><br></blockquote></p>
+<h2>8. Code</h2>
+<p><code>inline</code></p>
+<p>// indented block<br>int main() {<br>return 0;<br>}</p>
+<p>plain indented block without highlighting</p>
+<p>def hello():<br>print("Python")</p>
+<h2>9. Horizontal rules</h2>
+<hr>
+<hr>
+<hr>
+<h2>10. Tables (GFM)</h2>
+<p>| Header 1 | Header 2 |<br>|----------|----------|<br><table><br><tr><th>Cell 1</th><th>Cell 2</th></tr><br><tr><td><b>Bold</b></td><td><i>Italic</i></td></tr><br></table></p>
+<p>| Left | Center | Right |<br>|:-----|:------:|------:|<br>| text | text   | text  |</p>
+<h2>11. Footnotes (some parsers)</h2>
+<p>Here is a footnote.[^1]<br>[^1]: Footnote text.</p>
+<h2>12. Definition lists (PHP Markdown Extra, Pandoc)</h2>
+<p>Term 1<br>: Definition 1</p>
+<p>Term 2<br>: Definition 2</p>
+<h2>13. Emojis</h2>
+<p>:joy: :heart: :rocket:<br>Direct: 😊 🚀</p>
+<h2>14. Subscript / Superscript</h2>
+<p>H<sub>2</sub>O<br>X<sup>2</sup><br>(Some: ^superscript^ and ~subscript~)</p>
+<h2>15. Math (LaTeX)</h2>
+<p>Inline: $E=mc^2$<br>Block:<br>$$<br>\int_a^b x^2 dx = \frac{b^3-a^3}{3}<br>$$</p>
+<h2>16. HTML inside</h2>
+<p><div style="color:red;">Red text</div><br><span style="background:yellow;">Highlight</span><br><!-- HTML comment --></p>
+<h2>17. Escaping special chars</h2>
+<p>\<i>not italic\</i><br>\#not header<br>\[not link\]<br>\<i>not underscore\</i><br>\\ backslash</p>
+<h2>18. Auto links</h2>
+<http://example.com>
+<p><user@example.com></p>
+<h2>19. Inline comments (Kramdown/Pandoc)</h2>
+<p>[//]: # (comment)<br>[comment]: <> (another comment)</p>
+<h2>20. Custom anchors (some extensions)</h2>
+<h3>Header with ID {#custom-id}</h3>
+<p><a href="#custom-id">Jump to header</a></p>
+<h2>21. GFM auto linking</h2>
+<p>https://example.com becomes link</p>
+<h2>22. Mixed example</h2>
+<blockquote><b>Note:</b>
+<p><br><i>Inside quote</i><br><br>- [x] task<br></blockquote><br>rust<br>fn main() {}</p>
+<h2>23. Nested list with code and quote</h2>
+<ol><li>Step 1</li></ol><ul><li>Sub A</li><li>Sub B</li></ul>
+<p>echo "inside"</p>
+<ol><li>Step 2</li></ol>   > Quote inside list
+<h2>24. Spaces at line start</h2>
+<p>This line starts with spaces (may be code)</p>
+<hr>
+<p><b>Conclusion:</b> This file covers CommonMark + GFM + extensions (tables, tasks, footnotes, def lists, math, emoji, etc.). Parsing depends on implementation.</p>

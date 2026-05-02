@@ -116,6 +116,13 @@ private:
      */
     QString parseParagraphs(const QString& text);
     
+    /**
+     * @brief Парсит таблицы (GFM формат)
+     * @param text Текст для обработки
+     * @return QString Текст с обработанными таблицами
+     */
+    QString parseTables(const QString& text);
+    
 public:
     /**
      * @brief Преобразует HTML обратно в Markdown (для синхронизации WYSIWYG -> Markdown)

@@ -1,0 +1,14 @@
+debug/main.o
+debug/mainwindow.o
+debug/markdownparser.o
+debug/spellchecker.o
+debug/helpwindow.o
+debug/settings.o
+debug/settings_dialog.o
+debug/markdownhighlighter.o
+debug/md4c.o
+debug/qrc_resources.o
+debug/moc_mainwindow.o
+debug/moc_helpwindow.o
+debug/moc_settings_dialog.o
+debug/moc_markdownhighlighter.o

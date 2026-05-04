@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QDir>
 #include <QColor>
+#include <QStringList>
 
 class Settings {
 public:
@@ -19,6 +20,8 @@ public:
     QString defaultEncoding() const { return m_defaultEncoding; }
     QFont editorFont() const { return QFont("Consolas", m_fontSize); }
     QString colorScheme() const { return m_colorScheme; }
+    QStringList recentFiles() const { return m_recentFiles; }
+    int maxRecentFiles() const { return 10; }
     
     // Цвета для подсветки Markdown
     QColor headerColor() const;
@@ -35,6 +38,8 @@ public:
     void setLanguage(const QString& lang);
     void setDefaultEncoding(const QString& encoding);
     void setColorScheme(const QString& scheme);
+    void addRecentFile(const QString& filePath);
+    void clearRecentFiles();
 
     // Persistence
     bool saveToFile(const QString& filePath);
@@ -51,6 +56,7 @@ private:
     QString m_language;
     QString m_defaultEncoding;
     QString m_colorScheme;
+    QStringList m_recentFiles;
 };
 
 #endif // SETTINGS_H

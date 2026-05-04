@@ -36,6 +36,21 @@ void Settings::setColorScheme(const QString& scheme) {
     m_colorScheme = scheme;
 }
 
+void Settings::addRecentFile(const QString& filePath) {
+    // Удаляем если файл уже есть в списке
+    m_recentFiles.removeAll(filePath);
+    // Добавляем в начало
+    m_recentFiles.prepend(filePath);
+    // Ограничиваем размер списка
+    while (m_recentFiles.size() > maxRecentFiles()) {
+        m_recentFiles.removeLast();
+    }
+}
+
+void Settings::clearRecentFiles() {
+    m_recentFiles.clear();
+}
+
 QColor Settings::headerColor() const {
     if (m_colorScheme == "dark") return QColor(255, 100, 100);
     if (m_colorScheme == "light") return QColor(200, 0, 0);
@@ -134,6 +149,13 @@ bool Settings::saveToFile(const QString& filePath) {
     writer.writeTextElement("DefaultEncoding", m_defaultEncoding);
     writer.writeTextElement("ColorScheme", m_colorScheme);
     
+    // Сохраняем список недавних файлов
+    writer.writeStartElement("RecentFiles");
+    for (const QString& file : m_recentFiles) {
+        writer.writeTextElement("File", file);
+    }
+    writer.writeEndElement(); // RecentFiles
+    
     writer.writeEndElement(); // Settings
     writer.writeEndDocument();
     
@@ -149,6 +171,7 @@ bool Settings::loadFromFile(const QString& filePath) {
     }
 
     QXmlStreamReader reader(&file);
+    m_recentFiles.clear(); // Очищаем текущий список
     
     while (!reader.atEnd() && !reader.hasError()) {
         QXmlStreamReader::TokenType token = reader.readNext();
@@ -162,6 +185,17 @@ bool Settings::loadFromFile(const QString& filePath) {
                 m_defaultEncoding = reader.readElementText();
             } else if (reader.name() == "ColorScheme") {
                 m_colorScheme = reader.readElementText();
+            } else if (reader.name() == "RecentFiles") {
+                // Читаем список недавних файлов
+                while (!(reader.name() == "RecentFiles" && token == QXmlStreamReader::EndElement)) {
+                    token = reader.readNext();
+                    if (reader.name() == "File" && token == QXmlStreamReader::StartElement) {
+                        QString file = reader.readElementText();
+                        if (!file.isEmpty()) {
+                            m_recentFiles.append(file);
+                        }
+                    }
+                }
             }
         }
     }

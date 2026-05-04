@@ -25,10 +25,9 @@ unix {
 }
 
 win32 {
-    # Windows - пути нужно настроить под вашу установку
-    # INCLUDEPATH += C:/hunspell/include
-    # LIBS += -LC:/hunspell/lib -lhunspell
-    message("Для Windows настройте пути к Hunspell вручную")
+    # Windows - используем hunspell из папки проекта
+    INCLUDEPATH += $$PWD/hunspell
+    LIBS += -L$$PWD/hunspell -lhunspell
 }
 
 # Исходные файлы
@@ -38,7 +37,9 @@ SOURCES += main.cpp \
            spellchecker.cpp \
            helpwindow.cpp \
            settings.cpp \
-           settings_dialog.cpp
+           settings_dialog.cpp \
+           markdownhighlighter.cpp \
+           3rdparty/md4c.c
 
 # Заголовочные файлы
 HEADERS += mainwindow.h \
@@ -46,7 +47,9 @@ HEADERS += mainwindow.h \
            spellchecker.h \
            helpwindow.h \
            settings.h \
-           settings_dialog.h
+           settings_dialog.h \
+           markdownhighlighter.h \
+           3rdparty/md4c.h
 
 # Файлы переводов
 TRANSLATIONS += translations/editor_ru.ts \

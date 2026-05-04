@@ -1,0 +1,14 @@
+release/main.o
+release/mainwindow.o
+release/markdownparser.o
+release/spellchecker.o
+release/helpwindow.o
+release/settings.o
+release/settings_dialog.o
+release/markdownhighlighter.o
+release/md4c.o
+release/qrc_resources.o
+release/moc_mainwindow.o
+release/moc_helpwindow.o
+release/moc_settings_dialog.o
+release/moc_markdownhighlighter.o

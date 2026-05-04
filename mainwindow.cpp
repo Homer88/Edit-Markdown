@@ -137,6 +137,9 @@ MainWindow::MainWindow(QWidget *parent)
     // Загружаем системный язык при запуске
     loadTranslations("system");
     
+    // Загружаем настройки (включая историю файлов)
+    Settings::instance().loadFromFile(Settings::instance().configPath());
+    
     setWindowTitle(tr("Untitled.md"));
     resize(1200, 800);
     
@@ -145,6 +148,9 @@ MainWindow::MainWindow(QWidget *parent)
     createMenuBar();
     createStatusBar();
     applyPreviewStyles();
+    
+    // Обновляем меню недавних файлов после создания меню
+    updateRecentFilesMenu();
     
     // Переключаемся в режим Markdown по умолчанию
     toggleMarkdownMode();
@@ -426,6 +432,12 @@ void MainWindow::createMenuBar()
             m_previewEditor->document()->print(&printer);
         }
     });
+    
+    fileMenu->addSeparator();
+    
+    // Меню недавних файлов
+    m_recentFilesMenu = fileMenu->addMenu(tr("Recent Files"));
+    updateRecentFilesMenu();
     
     fileMenu->addSeparator();
     
@@ -1167,6 +1179,11 @@ void MainWindow::openFile()
         return;
     }
     
+    openFileByName(fileName);
+}
+
+void MainWindow::openFileByName(const QString& fileName)
+{
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly)) {
         QMessageBox::critical(this, tr("Error"), tr("Failed to open file"));
@@ -1280,6 +1297,10 @@ void MainWindow::openFile()
     m_currentEncoding = codec ? QString(codec->name()) : defaultEncoding;
     m_isModified = false;
     updateWindowTitle();
+    
+    // Добавляем файл в историю
+    Settings::instance().addRecentFile(fileName);
+    updateRecentFilesMenu();
     
     // Обновляем метки в статус-баре
     int lineCount = m_markdownEditor->blockCount();
@@ -3283,6 +3304,56 @@ void MainWindow::exportToPdf()
     
     // Используем HTML из предпросмотра для печати
     m_previewEditor->document()->print(&printer);
+}
+
+void MainWindow::updateRecentFilesMenu() {
+    if (!m_recentFilesMenu) return;
     
-    QMessageBox::information(this, tr("Success"), tr("File saved successfully:\n%1").arg(fileName));
+    m_recentFilesMenu->clear();
+    Settings& settings = Settings::instance();
+    QStringList recentFiles = settings.recentFiles();
+    
+    if (recentFiles.isEmpty()) {
+        QAction* emptyAction = m_recentFilesMenu->addAction(tr("No recent files"));
+        emptyAction->setEnabled(false);
+    } else {
+        for (int i = 0; i < recentFiles.size(); ++i) {
+            const QString& file = recentFiles[i];
+            // Сокращаем путь для отображения если он слишком длинный
+            QString displayName = file;
+            if (displayName.length() > 50) {
+                displayName = "..." + displayName.right(47);
+            }
+            
+            QAction* action = m_recentFilesMenu->addAction(QString("%1: %2").arg(i + 1).arg(displayName));
+            action->setData(file);
+            connect(action, &QAction::triggered, this, &MainWindow::openRecentFile);
+        }
+        
+        m_recentFilesMenu->addSeparator();
+        QAction* clearAction = m_recentFilesMenu->addAction(tr("Clear Recent Files"));
+        connect(clearAction, &QAction::triggered, this, [this]() {
+            Settings::instance().clearRecentFiles();
+            updateRecentFilesMenu();
+        });
+    }
+}
+
+void MainWindow::openRecentFile() {
+    QAction* action = qobject_cast<QAction*>(sender());
+    if (!action) return;
+    
+    QString fileName = action->data().toString();
+    if (fileName.isEmpty()) return;
+    
+    // Проверяем, существует ли файл
+    if (!QFile::exists(fileName)) {
+        QMessageBox::warning(this, tr("File Not Found"), 
+            tr("The file %1 does not exist.").arg(fileName));
+        Settings::instance().clearRecentFiles();
+        updateRecentFilesMenu();
+        return;
+    }
+    
+    openFileByName(fileName);
 }

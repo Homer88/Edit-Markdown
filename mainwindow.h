@@ -119,6 +119,12 @@ private slots:
     void openFile();
     
     /**
+     * @brief Открытие файла по имени (для истории)
+     * @param fileName Имя файла
+     */
+    void openFileByName(const QString& fileName);
+    
+    /**
      * @brief Сохранение файла на диск
      */
     void saveFile();
@@ -393,6 +399,7 @@ private:
     QTextEdit* m_previewEditor;        ///< Виджет предпросмотра (WYSIWYG)
     PlainTextEditWithLineNumbers* m_markdownEditor;  ///< Виджет редактора Markdown с нумерацией строк
     QWidget* m_currentEditor;          ///< Текущий активный редактор
+    QMenu* m_recentFilesMenu;          ///< Меню недавних файлов
     MarkdownHighlighter* m_highlighter; ///< Подсветка синтаксиса Markdown
     
     // Парсер Markdown
@@ -425,6 +432,10 @@ private:
     // Переводы
     QTranslator* m_translator;         ///< Основной переводчик интерфейса
     QString m_currentLanguage;         ///< Текущий выбранный язык
+    
+    // Методы для работы с историей файлов
+    void updateRecentFilesMenu();       ///< Обновить меню недавних файлов
+    void openRecentFile();             ///< Открыть файл из истории
 };
 
 #endif // MAINWINDOW_H

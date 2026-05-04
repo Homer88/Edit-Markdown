@@ -21,24 +21,19 @@ public:
     MarkdownParser();
     
     /**
-     * @brief Преобразует Markdown текст в HTML формат
+     * @brief Преобразует Markdown текст в QTextDocument (WYSIWYG)
      * @param markdown Исходный текст в формате Markdown
-     * @return QString Текст в формате HTML
-     * 
-     * Поддерживаемые элементы Markdown:
-     * - Заголовки (#, ##, ### и т.д.)
-     * - Жирный текст (**текст** или __текст__)
-     * - Курсив (*текст* или _текст_)
-     * - Зачеркнутый текст (~~текст~~)
-     * - Списки (маркированные и нумерованные)
-     * - Код (``код`` и блоки кода)
-     * - Цитаты (> текст)
-     * - Горизонтальные линии (---)
-     * - Ссылки ([текст](url))
-     * - Изображения (![альт](url))
+     * @return QTextDocument* Документ с форматированием
      */
-    QString parse(const QString& markdown);
+    QTextDocument* parseToDocument(const QString& markdown);
     
+    /**
+     * @brief Преобразует QTextDocument обратно в Markdown
+     * @param doc Документ для конвертации
+     * @return QString Текст в формате Markdown
+     */
+    QString documentToMarkdown(QTextDocument* doc);
+
 private:
     /**
      * @brief Парсит заголовки различных уровней

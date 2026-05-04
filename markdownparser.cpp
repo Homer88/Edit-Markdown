@@ -29,42 +29,131 @@ MarkdownParser::MarkdownParser()
  */
 QString MarkdownParser::parse(const QString& markdown)
 {
-    QString html = markdown;
+    QString result = markdown;
     
-    // Последовательная обработка всех элементов Markdown
-    // Сначала экранирование специальных символов
-    html = parseEscapes(html);
-    // Сохраняем блоки кода до остальной обработки
-    html = preserveCodeBlocks(html);
-    // Заголовки (включая альтернативные с === и ---)
-    html = parseHeaders(html);
-    // Горизонтальные линии
-    html = parseHorizontalRules(html);
-    // Таблицы до списков и цитат
-    html = parseTables(html);
-    // Цитаты
-    html = parseBlockquotes(html);
-    // Списки
-    html = parseLists(html);
-    // Изображения до ссылок (чтобы ! не мешал)
-    html = parseImages(html);
-    // Ссылки
-    html = parseLinks(html);
-    // Параграфы (перед восстановлением кода чтобы не ломать multi-line code blocks)
-    html = parseParagraphs(html);
-    // Восстанавливаем блоки кода и обрабатываем инлайн код (после параграфов)
-    html = restoreAndParseCode(html);
-    // Зачеркнутый текст
-    html = parseStrikeThrough(html);
-    // Жирный текст (должен быть перед курсивом)
-    html = parseBold(html);
-    // Курсив
-    html = parseItalic(html);
-    // Математика LaTeX
-    html = parseMath(html);
+    // Сохраняем блоки кода
+    result = preserveCodeBlocks(result);
     
-    qDebug() << "[parse] FINAL HTML:" << html.left(200);
-    return html;
+    // Применяем все замены
+    result = parseHeaders(result);
+    result = parseBold(result);
+    result = parseItalic(result);
+    result = parseStrikeThrough(result);
+    result = parseLists(result);
+    result = parseCode(result);
+    result = parseBlockquotes(result);
+    result = parseHorizontalRules(result);
+    result = parseLinks(result);
+    result = parseImages(result);
+    result = parseTables(result);
+    result = parseEscapes(result);
+    
+    // Восстанавливаем блоки кода
+    result = restoreAndParseCode(result);
+    
+    return result;
+}
+
+QTextDocument* MarkdownParser::parseToDocument(const QString& markdown)
+{
+    QTextDocument* doc = new QTextDocument();
+    QStringList lines = markdown.split('\n');
+    
+    QTextCursor cursor(doc);
+    bool inTable = false;
+    QStringList tableRows;
+    
+    for (int i = 0; i < lines.size(); ++i) {
+        QString line = lines[i];
+        
+        // Проверяем, является ли строка строкой таблицы
+        QRegularExpression tableRow("^\\|(.*)\\|$");
+        QRegularExpressionMatch match = tableRow.match(line);
+        
+        if (match.hasMatch()) {
+            if (!inTable) {
+                inTable = true;
+                tableRows.clear();
+            }
+            tableRows.append(line);
+        } else {
+            if (inTable) {
+                // Конец таблицы - обрабатываем
+                if (tableRows.size() >= 2) {
+                    // Создаём таблицу
+                    QTextTable* table = cursor.insertTable(tableRows.size() - 1,  // минус строка-разделитель
+                                                          tableRows[0].split('|', Qt::SkipEmptyParts).size());
+                    
+                    int rowIdx = 0;
+                    for (int j = 0; j < tableRows.size(); ++j) {
+                        QString row = tableRows[j];
+                        // Пропускаем строку-разделитель
+                        if (row.contains(QRegularExpression("^\\|[\\s:]*-+[\\s:|]*\\|$"))) {
+                            continue;
+                        }
+                        
+                        QStringList cells = row.split('|', Qt::SkipEmptyParts);
+                        for (int k = 0; k < cells.size(); ++k) {
+                            QTextTableCell cell = table->cellAt(rowIdx, k);
+                            QTextCursor cellCursor = cell.firstCursorPosition();
+                            
+                            // Применяем форматирование к ячейке
+                            QString cellText = cells[k].trimmed();
+                            processInline(cellCursor, cellText, 0);
+                            
+                            // Если это первая строка (заголовок), делаем жирным
+                            if (rowIdx == 0) {
+                                QTextCharFormat fmt;
+                                fmt.setFontWeight(QFont::Bold);
+                                cellCursor.mergeCharFormat(fmt);
+                            }
+                        }
+                        ++rowIdx;
+                    }
+                }
+                inTable = false;
+                tableRows.clear();
+            }
+            
+            // Обычный текст - применяем парсинг
+            if (!line.trimmed().isEmpty()) {
+                cursor.insertBlock();
+                processInline(cursor, line, 0);
+            }
+        }
+    }
+    
+    // Если таблица в конце файла
+    if (inTable && tableRows.size() >= 2) {
+        // Аналогично созданию таблицы выше
+        QTextTable* table = cursor.insertTable(tableRows.size() - 1,  // минус строка-разделитель
+                                                  tableRows[0].split('|', Qt::SkipEmptyParts).size());
+        
+        int rowIdx = 0;
+        for (int j = 0; j < tableRows.size(); ++j) {
+            QString row = tableRows[j];
+            if (row.contains(QRegularExpression("^\\|[\\s:]*-+[\\s:|]*\\|$"))) {
+                continue;
+            }
+            
+            QStringList cells = row.split('|', Qt::SkipEmptyParts);
+            for (int k = 0; k < cells.size(); ++k) {
+                QTextTableCell cell = table->cellAt(rowIdx, k);
+                QTextCursor cellCursor = cell.firstCursorPosition();
+                QString cellText = cells[k].trimmed();
+                processInline(cellCursor, cellText, 0);
+                
+                if (rowIdx == 0) {
+                    QTextCharFormat fmt;
+                    fmt.setFontWeight(QFont::Bold);
+                    cellCursor.mergeCharFormat(fmt);
+                }
+            }
+            ++rowIdx;
+        }
+    }
+    
+    return doc;
 }
 
 /**
